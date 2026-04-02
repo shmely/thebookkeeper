@@ -11,14 +11,15 @@ export interface Transaction {
 
 export interface Account {
     accountId: string;
-    accountNumber: number;
+    accountNumber?: number;
     accountNickname: string;
-    firstName: string;
-    lastName: string;
+    firstName?: string;
+    lastName?: string;
     currencyCode: string; // e.g., "ILS"
-    accountBalance: number;
-    todayILSRate: number;
-    isOwner: boolean;
-    hasWriteAccess: boolean;
-    sharedUsers: unknown[];
+    accountBalance?: number;
+    todayILSRate?: number;
+    isOwner?: boolean;
+    hasWriteAccess?: boolean;
+    sharedUsers?: string[];
 }
+

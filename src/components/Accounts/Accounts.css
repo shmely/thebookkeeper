@@ -2,18 +2,88 @@
     display: flex;
     flex-flow: wrap;
     width: 100%;
+    justify-content: center;
 }
 
 .account-item {
-    width: 300px;
+    width: 100%;
+    max-width: 350px;
     height: 150px;
-    background: var(--bg);
-    border: 1px solid var(--border);
     border-radius: 8px;
+    color: rgba(0, 0, 0, 0.54);
     margin: 10px;
+    /* background: var(--bg);
+    border: 1px solid var(--border);
+    
+    
     display: flex;
     flex-direction: column;
     justify-content: center;
     align-items: center;
-    background: linear-gradient(90deg,#6200ea,#00bcd4);
+    background: linear-gradient(90deg,#6200ea,#00bcd4); */
+}
+
+.account-button {
+    display: flex;
+    justify-content: flex-start;
+    flex-direction: column;
+    width: 100%;
+    height: 100%;
+
+}
+
+.account-button-title {
+    width: 100%;
+    display: flex;
+    padding: 5px;
+    justify-content: space-between;
+}
+
+.account-button-subtitle {
+    width: 100%;
+    display: flex;
+    padding: 5px;
+    justify-content: flex-start;
+    color: rgba(0, 0, 0, 0.54);
+}
+
+.account-button-balance {
+    width: 100%;
+    display: flex;
+    font-size: 24px;
+    justify-content: center;
+    font-weight: 600;
+    align-items: center;
+
+
+}
+
+.plus {
+    color: #16a34a;
+}
+
+.minus {
+    color: #dc2626;
+}
+
+.balance-text {
+    direction: ltr;
+    margin-left: 12px;
+}
+
+.currency-icon {
+    display: inline-block;
+    width: 24px;
+    height: 16px;
+}
+
+.account-button {
+    width: 100%;
+    height: 100%;
+    text-transform: 'none';
+    display: 'flex';
+    flex-direction: 'column';
+    justify-content: 'space-between';
+    align-items: 'flex-start';
+    padding: '16px';
 }

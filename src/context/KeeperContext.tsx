@@ -5,29 +5,25 @@ import type { Transaction, Account } from '../interface/types';
 const DUMMY_ACCOUNTS: Account[] = [
   {
     accountId: 'acc-001',
-    accountNumber: 1234567890,
-    accountNickname: 'Main Checking',
-    firstName: 'John',
-    lastName: 'Doe',
-    currencyCode: 'USD',
-    accountBalance: 5000,
-    todayILSRate: 3.6,
-    isOwner: true,
-    hasWriteAccess: true,
-    sharedUsers: [],
+    accountNickname: 'אלון ומעין יערי',
+    firstName: 'אלון',
+    lastName: 'יערי',
+    currencyCode: 'ILS',
+    accountBalance: 1000
   },
   {
     accountId: 'acc-002',
-    accountNumber: 9876543210,
-    accountNickname: 'Savings Account',
-    firstName: 'Jane',
-    lastName: 'Doe',
+    accountNickname: 'איתמר יתרה',
+    firstName: 'איתמר',
+    lastName: 'יערי',
     currencyCode: 'ILS',
-    accountBalance: 15000,
-    todayILSRate: 1.0,
-    isOwner: false,
-    hasWriteAccess: true,
-    sharedUsers: [],
+    accountBalance: 15000
+  },
+  {
+    accountId: 'acc-003',
+    accountNumber: 9876543210,
+    accountNickname: ' יותם',
+    currencyCode: 'ILS'
   },
 ];
 

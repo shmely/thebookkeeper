@@ -1,4 +1,4 @@
-import './header.css';
+import './Header.css';
 import IconButton from '@mui/material/IconButton';
 import MenuIcon from '@mui/icons-material/Menu';
 import LanguageIcon from '@mui/icons-material/Language';
@@ -8,14 +8,14 @@ export default function Header() {
             <div className='header-content'>
                 <div className='header-menu'>
                     <IconButton size='large'>
-                        <MenuIcon  sx={{color: 'white'}} />
+                        <MenuIcon sx={{ color: 'white' }} />
                     </IconButton>
                 </div>
-                <div className='header-logo'>The Bookkeeper</div>
-                
+                <div className='header-logo'>מנהל החשבונות</div>
+
                 <div className='language-selector'>
                     <IconButton size='large'>
-                        <LanguageIcon sx={{color: 'white'}} />
+                        <LanguageIcon sx={{ color: 'white' }} />
                     </IconButton>
                 </div>
             </div>
