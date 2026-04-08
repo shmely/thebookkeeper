@@ -77,8 +77,6 @@ const DUMMY_TRANSACTIONS: Transaction[] = [
 
 // ===== Context Types =====
 interface KeeperContextType {
-  // Account Methods
-  accounts: Account[];
   getAccounts: () => Account[];
   addAccount: (account: Account) => void;
   updateAccount: (accountId: string, account: Partial<Account>) => void;
@@ -178,7 +176,6 @@ export const KeeperProvider: React.FC<KeeperProviderProps> = ({ children }) => {
   };
 
   const value: KeeperContextType = {
-    accounts,
     getAccounts,
     addAccount,
     updateAccount,

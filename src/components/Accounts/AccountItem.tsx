@@ -1,21 +1,39 @@
+import { useState } from 'react';
 import './Accounts.css';
 import type { Account } from '../../interface/types';
 import { currencies } from '../../interface/currencies';
 import Paper from '@mui/material/Paper';
-import { IconButton } from '@mui/material';
-import MoreVertIcon from '@mui/icons-material/MoreVert';
+import AccountActions from '../AccountActions/AccountActions';
+import EditAccountDialog from '../EditAccountDialog/EditAccountDialog';
+import { useKeeper } from '../../context/KeeperContext';
+
 
 export default function AccountItem({ account }: { account: Account }) {
+    const { deleteAccount } = useKeeper();
+    const [showEditAccountDialog, setshowEditAccountDialog] = useState<boolean>(false);
     const currencyInfo = currencies[account.currencyCode];
     const fontClass = (account?.accountBalance ?? 0) >= 0 ? 'plus' : 'minus';
+
+    const handleClose = () => {
+        setshowEditAccountDialog(false);
+    };
+
+    const handleClickOpen = () => {
+        setshowEditAccountDialog(true);
+    };
+
+    const handleDelete = () => {
+        deleteAccount(account.accountId);
+    }
+
+
+
     return (
         <Paper elevation={3} className='account-item'>
             <div role='button' className='account-button'>
                 <div className='account-button-title'>
                     <h2>{account.accountNickname}</h2>
-                    <IconButton size='small' style={{ marginLeft: '8px' }} >
-                        <MoreVertIcon fontSize='small' />
-                    </IconButton>
+                    <AccountActions onEdit={handleClickOpen} onDelete={handleDelete} />
                 </div>
                 <div className='account-button-subtitle'>
                     <p>{account.firstName} {account.lastName}</p>
@@ -26,7 +44,7 @@ export default function AccountItem({ account }: { account: Account }) {
                     <span dangerouslySetInnerHTML={{ __html: currencyInfo?.flag }} />
                 </div>
             </div>
-
+            <EditAccountDialog open={showEditAccountDialog} onClose={handleClose} account={account} />
         </Paper>
     )
 }
