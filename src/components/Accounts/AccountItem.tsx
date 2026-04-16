@@ -1,5 +1,6 @@
 import { useState } from 'react';
 import './Accounts.css';
+import { useNavigate } from 'react-router-dom';
 import type { Account } from '../../interface/types';
 import { currencies } from '../../interface/currencies';
 import Paper from '@mui/material/Paper';
@@ -9,6 +10,7 @@ import { useKeeper } from '../../context/KeeperContext';
 
 
 export default function AccountItem({ account }: { account: Account }) {
+    const navigate = useNavigate();
     const { deleteAccount } = useKeeper();
     const [showEditAccountDialog, setshowEditAccountDialog] = useState<boolean>(false);
     const currencyInfo = currencies[account.currencyCode];
@@ -26,11 +28,15 @@ export default function AccountItem({ account }: { account: Account }) {
         deleteAccount(account.accountId);
     }
 
+    const handleTransactionDialog = (accountId: string) => {
+        navigate(`base/account/${accountId}`);
+    }
+
 
 
     return (
         <Paper elevation={3} className='account-item'>
-            <div role='button' className='account-button'>
+            <div role='button'  className='account-button' onClick={() => handleTransactionDialog(account.accountId)}>
                 <div className='account-button-title'>
                     <h2>{account.accountNickname}</h2>
                     <AccountActions onEdit={handleClickOpen} onDelete={handleDelete} />

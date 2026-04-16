@@ -7,7 +7,7 @@ import Paper from '@mui/material/Paper';
 import { useState } from 'react';
 import AddAccountDialog from '../EditAccountDialog/EditAccountDialog';
 
-export default function Accounts() {
+export default function AccountsList() {
     const { getAccounts } = useKeeper();
     const [showEditAccountDialog, setshowEditAccountDialog] = useState<boolean>(false);
 

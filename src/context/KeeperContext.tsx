@@ -34,13 +34,15 @@ const DUMMY_TRANSACTIONS: Transaction[] = [
     amount: 100,
     ilsAmount: 360,
     date: '2026-03-25',
+    transactionType: 'expense',
     comment: 'Grocery shopping',
     isRealBankAction: true,
   },
   {
     transactionId: 'txn-002',
     accountId: 'acc-001',
-    amount: 50,
+    amount: 350,
+    transactionType: 'income',
     ilsAmount: 180,
     date: '2026-03-26',
     comment: 'Gas station',
@@ -50,6 +52,7 @@ const DUMMY_TRANSACTIONS: Transaction[] = [
     transactionId: 'txn-003',
     accountId: 'acc-001',
     amount: 200,
+    transactionType: 'income',
     ilsAmount: 720,
     date: '2026-03-27',
     comment: 'Restaurant',
@@ -59,6 +62,7 @@ const DUMMY_TRANSACTIONS: Transaction[] = [
     transactionId: 'txn-004',
     accountId: 'acc-002',
     amount: 500,
+    transactionType: 'expense',
     ilsAmount: 500,
     date: '2026-03-24',
     comment: 'Salary deposit',
@@ -68,6 +72,7 @@ const DUMMY_TRANSACTIONS: Transaction[] = [
     transactionId: 'txn-005',
     accountId: 'acc-002',
     amount: 75,
+    transactionType: 'expense',
     ilsAmount: 75,
     date: '2026-03-28',
     comment: 'Utility bill',
@@ -85,7 +90,7 @@ interface KeeperContextType {
   // Transaction Methods
   transactions: Transaction[];
   getTransactions: (
-    accountId: string,
+    accountId: string | undefined,
     dateFrom?: string,
     dateTo?: string
   ) => Transaction[];
@@ -135,12 +140,13 @@ export const KeeperProvider: React.FC<KeeperProviderProps> = ({ children }) => {
 
   // ===== Transaction Methods =====
   const getTransactions = (
-    accountId: string,
+    accountId: string | undefined,
     dateFrom?: string,
     dateTo?: string
   ): Transaction[] => {
     return transactions.filter((transaction) => {
       const accountMatch = transaction.accountId === accountId;
+      if (!accountMatch) return [];
       const dateMatch =
         (!dateFrom || transaction.date >= dateFrom) &&
         (!dateTo || transaction.date <= dateTo);
