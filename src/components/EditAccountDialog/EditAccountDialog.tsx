@@ -21,7 +21,7 @@ import AccountBalanceIcon from '@mui/icons-material/AccountBalance';
 import ExpandMoreIcon from '@mui/icons-material/ExpandMore';
 import ExpandLessIcon from '@mui/icons-material/ExpandLess';
 import type { Account } from '../../interface/types';
-import rtlFieldStyle from '../AddAccountDialog/rtlFieldStyle';
+import rtlFieldStyle from '../../style/rtlFieldStyle';
 import { useKeeper } from '../../context/KeeperContext';
 
 

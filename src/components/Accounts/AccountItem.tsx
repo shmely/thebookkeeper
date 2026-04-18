@@ -36,10 +36,12 @@ export default function AccountItem({ account }: { account: Account }) {
 
     return (
         <Paper elevation={3} className='account-item'>
-            <div role='button'  className='account-button' onClick={() => handleTransactionDialog(account.accountId)}>
+            <div role='button' className='account-button' onClick={() => handleTransactionDialog(account.accountId)}>
                 <div className='account-button-title'>
                     <h2>{account.accountNickname}</h2>
-                    <AccountActions onEdit={handleClickOpen} onDelete={handleDelete} />
+                    <div onClick={(e) => e.stopPropagation()}>
+                        <AccountActions onEdit={handleClickOpen} onDelete={handleDelete} />
+                    </div>
                 </div>
                 <div className='account-button-subtitle'>
                     <p>{account.firstName} {account.lastName}</p>

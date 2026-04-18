@@ -1,25 +1,54 @@
 import React, { useState } from 'react';
-import { useParams } from 'react-router-dom';
+import { useNavigate, useParams } from 'react-router-dom';
 import {
     Box, Container, Typography, Card, CardContent, Button, IconButton,
     List, ListItem, ListItemIcon, ListItemText, Chip, Menu, MenuItem, Fab
 } from '@mui/material';
 import {
     ArrowForward, Add, Refresh, CalendarToday,
-    AccountBalanceWallet, TrendingUp, WhatsApp
+    AccountBalanceWallet, TrendingUp, WhatsApp,
+    TrendingDown
 } from '@mui/icons-material';
 import { useKeeper } from '../../context/KeeperContext';
 import AddTransactionModal from './AddTransactionModal';
+import type { Transaction } from '../../interface/types';
 type RouteParams = {
-  accountId: string;
+    accountId: string;
+};
+
+interface DateRange {
+    from: Date;
+    to: Date;
+}
+
+
+const getCurrentMonthRange = (): DateRange => {
+    const now = new Date();
+    const year = now.getFullYear();
+    const month = now.getMonth();
+
+    // יום ראשון של החודש הנוכחי
+    const from = new Date(year, month, 1);
+
+    // יום אחרון של החודש הנוכחי (יום 0 של החודש הבא)
+    const to = new Date(year, month + 1, 0);
+
+    // הגדרת השעה לסוף היום (23:59:59) כדי שהטווח יכלול את כל היום האחרון
+    to.setHours(23, 59, 59, 999);
+
+    return { from, to };
 };
 
 const AccountPage: React.FC = () => {
     const { accountId } = useParams<RouteParams>();
     const [anchorEl, setAnchorEl] = useState<null | HTMLElement>(null);
     const [isModalOpen, setIsModalOpen] = useState<boolean>(false);
-    const { getTransactions } = useKeeper();
-
+    const { getTransactions, getAccounts } = useKeeper();
+    const navigate = useNavigate();
+    const transactions: Transaction[] = getTransactions(accountId);
+    const dateRange = getCurrentMonthRange();
+    const currentAccount = getAccounts().find(account => account.accountId === accountId);
+    const isBalancePositive = currentAccount?.accountBalance !== undefined && currentAccount.accountBalance >= 0;
 
     const handleMenuOpen = (event: React.MouseEvent<HTMLButtonElement>) => {
         setAnchorEl(event.currentTarget);
@@ -32,7 +61,7 @@ const AccountPage: React.FC = () => {
             <Container maxWidth="sm">
 
                 {/* Back Button Section */}
-                <Box sx={{ display: 'flex', alignItems: 'center', mb: 2, cursor: 'pointer', width: 'fit-content' }}>
+                <Box role="button" onClick={() => navigate(-1)} sx={{ display: 'flex', alignItems: 'center', mb: 2, cursor: 'pointer', width: 'fit-content' }}>
                     <ArrowForward fontSize="small" sx={{ color: '#6200ea', ml: 0.5 }} />
                     <Typography variant="body2" sx={{ color: '#6200ea', fontWeight: 500 }}>חזור</Typography>
                 </Box>
@@ -40,18 +69,15 @@ const AccountPage: React.FC = () => {
                 {/* Balance Card */}
                 <Card sx={{ borderRadius: 4, mb: 3, boxShadow: '0 4px 12px rgba(0,0,0,0.05)', textAlign: 'center' }}>
                     <CardContent sx={{ pt: 1 }}>
-                        <Typography variant="caption" color="text.secondary" sx={{ display: 'block', textAlign: 'right', mb: 1 }}>
-                            מזהה# 002
-                        </Typography>
-                        <Typography variant="h5" sx={{ fontWeight: 700, color: '#1a237e', mb: 1 }}>איתמר יתרה</Typography>
+                        <Typography variant="h5" sx={{ fontWeight: 700, color: '#1a237e', mb: 1 }}>{currentAccount?.accountNickname}</Typography>
                         <Typography variant="overline" color="text.secondary">יתרה נוכחית</Typography>
-                        <Typography variant="h3" sx={{ fontWeight: 800, color: '#2e7d32', my: 1 }}>₪980</Typography>
+                        <Typography variant="h3" sx={{ fontWeight: 800, color: isBalancePositive ? '#2e7d32' : '#d32f2f', my: 1 }}>₪{currentAccount?.accountBalance?.toLocaleString('he-IL')}</Typography>
                         <Chip
-                            icon={<TrendingUp style={{ color: 'inherit' }} />}
-                            label="יתרה חיובית"
+                            icon={isBalancePositive ? <TrendingUp style={{ color: isBalancePositive ? '#2e7d32' : '#d32f2f' }} /> : <TrendingDown style={{ color: isBalancePositive ? '#2e7d32' : '#d32f2f' }} />}
+                            label={isBalancePositive ? 'יתרה חיובית' : 'יתרה שלילית'}
                             color="success"
                             variant="outlined"
-                            sx={{ fontWeight: 'bold' }}
+                            sx={{ fontWeight: 'bold', border: 'none' }}
                         />
                     </CardContent>
                 </Card>
@@ -76,7 +102,7 @@ const AccountPage: React.FC = () => {
                         variant="outlined"
                         startIcon={<CalendarToday />}
                         onClick={handleMenuOpen}
-                        sx={{ borderRadius: 2, height: 48, borderColor: '#7c4dff', color: '#7c4dff', whiteSpace: 'nowrap' }}
+                        sx={{ borderRadius: 2, height: 48, borderColor: '#7c4dff', color: '#7c4dff', whiteSpace: 'nowrap', minWidth: '150px', gap: 1.5 }}
                     >
                         חודש אחרון
                     </Button>
@@ -98,7 +124,10 @@ const AccountPage: React.FC = () => {
 
                 {/* Transactions List */}
                 <List sx={{ bgcolor: 'white', borderRadius: 3, boxShadow: '0 2px 8px rgba(0,0,0,0.04)', overflow: 'hidden' }}>
-                    {getTransactions(accountId, new Date(2025, 1, 1).toDateString(), new Date(2026, 12, 31).toDateString()).map((item) => (
+                    {transactions.filter((transaction) => {
+                        const date = new Date(transaction.date);
+                        return date >= dateRange.from && date <= dateRange.to;
+                    }).map((item) => (
                         <ListItem
                             key={item.transactionId}
                             divider
@@ -117,9 +146,9 @@ const AccountPage: React.FC = () => {
                             />
                             <Typography
                                 variant="body1"
-                                sx={{ fontWeight: 700, color: item.amount > 0 ? '#2e7d32' : '#d32f2f' }}
+                                sx={{ fontWeight: 700, color: item.ilsAmount >= 0 ? '#2e7d32' : '#d32f2f' }}
                             >
-                                ₪{item.amount}
+                                ₪{Math.abs(item.ilsAmount)}
                             </Typography>
                         </ListItem>
                     ))}

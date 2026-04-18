@@ -8,16 +8,14 @@ const DUMMY_ACCOUNTS: Account[] = [
     accountNickname: 'אלון ומעין יערי',
     firstName: 'אלון',
     lastName: 'יערי',
-    currencyCode: 'ILS',
-    accountBalance: 1000
+    currencyCode: 'ILS'   
   },
   {
     accountId: 'acc-002',
     accountNickname: 'איתמר יתרה',
     firstName: 'איתמר',
     lastName: 'יערי',
-    currencyCode: 'ILS',
-    accountBalance: 15000
+    currencyCode: 'ILS'
   },
   {
     accountId: 'acc-003',
@@ -64,17 +62,27 @@ const DUMMY_TRANSACTIONS: Transaction[] = [
     amount: 500,
     transactionType: 'expense',
     ilsAmount: 500,
-    date: '2026-03-24',
+    date: '2026-04-24',
     comment: 'Salary deposit',
     isRealBankAction: true,
   },
   {
     transactionId: 'txn-005',
     accountId: 'acc-002',
-    amount: 75,
+    amount: -700,
     transactionType: 'expense',
-    ilsAmount: 75,
+    ilsAmount: -700,
     date: '2026-03-28',
+    comment: 'Utility bill',
+    isRealBankAction: true,
+  },
+  {
+    transactionId: 'txn-005',
+    accountId: 'acc-002',
+    amount: -100,
+    transactionType: 'expense',
+    ilsAmount: -100,
+    date: '2026-04-28',
     comment: 'Utility bill',
     isRealBankAction: true,
   },
@@ -90,9 +98,7 @@ interface KeeperContextType {
   // Transaction Methods
   transactions: Transaction[];
   getTransactions: (
-    accountId: string | undefined,
-    dateFrom?: string,
-    dateTo?: string
+    accountId: string | undefined
   ) => Transaction[];
   addTransaction: (accountId: string, transaction: Transaction) => void;
   updateTransaction: (transactionId: string, transaction: Partial<Transaction>) => void;
@@ -113,8 +119,23 @@ export const KeeperProvider: React.FC<KeeperProviderProps> = ({ children }) => {
 
   // ===== Account Methods =====
   const getAccounts = (): Account[] => {
-    return [...accounts];
-  };
+  return accounts.map(account => {
+    // 1. סינון התנועות של החשבון הספציפי
+    const accountTransactions = transactions.filter(t => t.accountId === account.accountId);
+
+    // 2. סכימה ישירה של ה-amount (חיובי או שלילי)
+    const transactionsSum = accountTransactions.reduce((sum, t) => sum + (t.amount || 0), 0);
+
+    // 3. הוספת היתרה ההתחלתית מהגדרות החשבון (אם קיימת כזו בשדה accountBalance המקורי)
+    // הערה: בדרך כלל כשיוצרים חשבון מגדירים לו יתרה התחלתית, אז כדאי להוסיף אותה לסכום התנועות.
+    const initialBalance = account.accountBalance ?? 0; 
+
+    return {
+      ...account,
+      accountBalance: initialBalance + transactionsSum
+    };
+  });
+};
 
   const addAccount = (account: Account): void => {
     setAccounts((prevAccounts) => [...prevAccounts, account]);
@@ -140,18 +161,17 @@ export const KeeperProvider: React.FC<KeeperProviderProps> = ({ children }) => {
 
   // ===== Transaction Methods =====
   const getTransactions = (
-    accountId: string | undefined,
-    dateFrom?: string,
-    dateTo?: string
+    accountId: string | undefined
   ): Transaction[] => {
-    return transactions.filter((transaction) => {
-      const accountMatch = transaction.accountId === accountId;
-      if (!accountMatch) return [];
-      const dateMatch =
-        (!dateFrom || transaction.date >= dateFrom) &&
-        (!dateTo || transaction.date <= dateTo);
-      return accountMatch && dateMatch;
-    });
+    if (!accountId) {
+      console.warn("getTransactions called without accountId");
+      return [];
+    }
+    const accountMatch = transactions.filter(transaction => transaction.accountId === accountId);
+    // const dateMatch =
+    //   (!dateFrom || transaction.date >= dateFrom) &&
+    //   (!dateTo || transaction.date <= dateTo);
+    return accountMatch;
   };
 
   const addTransaction = (accountId: string, transaction: Transaction): void => {
