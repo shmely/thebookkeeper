@@ -1,4 +1,5 @@
 import React, { useState } from 'react';
+import { useKeeper } from '../../context/KeeperContext';
 import {
   Dialog, DialogTitle, DialogContent, DialogActions,
   TextField, Button, Box, ToggleButtonGroup, ToggleButton, Typography
@@ -10,11 +11,15 @@ import rtlFieldStyle from '../../style/rtlFieldStyle';
 interface ModalProps {
   open: boolean;
   onClose: () => void;
+  accountId: string;
 }
 
-const AddTransactionModal: React.FC<ModalProps> = ({ open, onClose }) => {
+const AddTransactionModal: React.FC<ModalProps> = ({ open, onClose, accountId }) => {
   const [type, setType] = useState<TransactionType>('expense');
-  const [amount, setAmount] = useState<string>('');
+  const { addTransaction } = useKeeper();
+  const [amount, setAmount] = useState<string | number>('');
+  const [comment, setComment] = useState('');
+  const [transactionDate, setTransactionDate] = useState<string>(new Date().toISOString().split('T')[0]); // Default to today
 
   const handleTypeChange = (
     _event: React.MouseEvent<HTMLElement>,
@@ -23,17 +28,58 @@ const AddTransactionModal: React.FC<ModalProps> = ({ open, onClose }) => {
     if (newType !== null) setType(newType);
   };
 
+  const handleChangeAmount = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const val = e.target.value;
+    if (val === '') {
+      setAmount('');
+      return;
+    }  // 2. Only update if it's a valid integer
+    if (Number.isInteger(Number(val))) {
+      setAmount(parseInt(val, 10));
+    }
+  };
+
+  const handleChangeComment = (e: React.ChangeEvent<HTMLInputElement>) => {
+    setComment(e.target.value);
+  };
+
+  const handleClose = () => {
+    setType('expense');
+    setAmount('');
+    setComment('');
+    onClose();
+  }
+
+  const handleSubmit = () => {
+    // Here you would typically send the new transaction data to your backend or state management
+    if (amount === '') return;
+    const transactionId: string = crypto.randomUUID();
+    const finalAmount = type === 'expense' ? Number(amount) * -1 : Number(amount); // Negate amount for expenses 
+    addTransaction(accountId, { accountId, transactionType: type, amount: finalAmount, comment, date: transactionDate, transactionId });
+    handleClose();
+  }
+
+
   return (
     <Dialog
       open={open}
       onClose={onClose}
       fullWidth
       maxWidth="xs"
-      PaperProps={{ sx: { borderRadius: 4, direction: 'rtl', p: 1 } }}
+      slotProps={{
+        paper: {
+          sx: {
+            borderRadius: 4,
+            direction: 'rtl',
+            p: 1
+          }
+        }
+      }}
     >
       <DialogTitle sx={{ textAlign: 'center', fontWeight: 700, pb: 1 }}>
         הוסף עסקה חדשה
       </DialogTitle>
+
 
       <DialogContent sx={{ mt: 1 }}>
         <Box sx={{ display: 'flex', flexDirection: 'column', gap: 2.5 }}>
@@ -42,9 +88,14 @@ const AddTransactionModal: React.FC<ModalProps> = ({ open, onClose }) => {
             label="סכום"
             fullWidth
             value={amount}
-            onChange={(e) => setAmount(e.target.value)}
+            onChange={handleChangeAmount}
             type="number"
             variant="outlined"
+            onKeyDown={(e) => {
+              if (e.key === '-' || e.key === 'e') {
+                e.preventDefault();
+              }
+            }}
             sx={rtlFieldStyle}
           />
 
@@ -58,8 +109,13 @@ const AddTransactionModal: React.FC<ModalProps> = ({ open, onClose }) => {
               value="expense"
               sx={{
                 py: 1.5,
+                borderRadius: '5px',
                 gap: 1,
-                '&.Mui-selected': { bgcolor: '#3f51b5', color: 'white', '&:hover': { bgcolor: '#303f9f' } }
+                '&.Mui-selected': { marginLeft: '10px', borderRadius: '5px', bgcolor: '#3f51b5', color: 'white', '&:hover': { bgcolor: '#303f9f' } },
+                '& .MuiToggleButton-root': {
+                  borderRadius: '5px !important', // Forces all corners to 5px
+                  border: '1px solid #ccc !important', // Optional: gives each button its own border
+                },
               }}
             >
               <ArrowDownward fontSize="small" color="error" />
@@ -70,8 +126,13 @@ const AddTransactionModal: React.FC<ModalProps> = ({ open, onClose }) => {
               value="income"
               sx={{
                 py: 1.5,
+                borderRadius: '5px',
                 gap: 1,
-                '&.Mui-selected': { bgcolor: '#f5f5f5', color: 'rgba(0,0,0,0.6)' }
+                '&.Mui-selected': { borderRadius: '5px', bgcolor: '#3f51b5', color: 'rgba(0,0,0,0.6)', '&:hover': { bgcolor: '#303f9f' } },
+                '&.MuiToggleButton-root': {
+                  borderRadius: '5px !important', // Forces all corners to 5px
+                  border: '1px solid #ccc !important', // Optional: gives each button its own border
+                },
               }}
             >
               <ArrowUpward fontSize="small" color="success" />
@@ -82,9 +143,12 @@ const AddTransactionModal: React.FC<ModalProps> = ({ open, onClose }) => {
           <TextField
             label="תאריך"
             type="date"
-            defaultValue="2026-04-16"
+            defaultValue={transactionDate}
             fullWidth
-            InputLabelProps={{ shrink: true }}
+            slotProps={{
+              inputLabel: { shrink: true },
+              htmlInput: { min: 0 } // Note: 'inputProps' became 'htmlInput' in slotProps
+            }}
             sx={rtlFieldStyle}
           />
 
@@ -93,6 +157,8 @@ const AddTransactionModal: React.FC<ModalProps> = ({ open, onClose }) => {
             fullWidth
             multiline
             rows={3}
+            value={comment}
+            onChange={handleChangeComment}
             placeholder="הערה..."
             sx={rtlFieldStyle}
           />
@@ -102,7 +168,7 @@ const AddTransactionModal: React.FC<ModalProps> = ({ open, onClose }) => {
 
       <DialogActions sx={{ px: 3, pb: 3, pt: 1, justifyContent: 'space-between', gap: 2 }}>
         <Button
-          onClick={onClose}
+          onClick={handleClose}
           variant="outlined"
           fullWidth
           sx={{ borderRadius: 2, height: 45 }}
@@ -112,8 +178,9 @@ const AddTransactionModal: React.FC<ModalProps> = ({ open, onClose }) => {
         <Button
           variant="contained"
           fullWidth
-          disabled={!amount}
-          sx={{ borderRadius: 2, height: 45, bgcolor: '#e0e0e0' }}
+          disabled={amount === '' || amount === 0 || comment.trim().length < 3}
+          sx={{ borderRadius: 2, height: 45 }}
+          onClick={handleSubmit}
         >
           הוסף
         </Button>

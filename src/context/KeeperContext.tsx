@@ -8,7 +8,7 @@ const DUMMY_ACCOUNTS: Account[] = [
     accountNickname: 'אלון ומעין יערי',
     firstName: 'אלון',
     lastName: 'יערי',
-    currencyCode: 'ILS'   
+    currencyCode: 'ILS'
   },
   {
     accountId: 'acc-002',
@@ -30,61 +30,49 @@ const DUMMY_TRANSACTIONS: Transaction[] = [
     transactionId: 'txn-001',
     accountId: 'acc-001',
     amount: 100,
-    ilsAmount: 360,
     date: '2026-03-25',
     transactionType: 'expense',
-    comment: 'Grocery shopping',
-    isRealBankAction: true,
+    comment: 'Grocery shopping'
   },
   {
     transactionId: 'txn-002',
     accountId: 'acc-001',
     amount: 350,
     transactionType: 'income',
-    ilsAmount: 180,
     date: '2026-03-26',
     comment: 'Gas station',
-    isRealBankAction: true,
   },
   {
     transactionId: 'txn-003',
     accountId: 'acc-001',
     amount: 200,
     transactionType: 'income',
-    ilsAmount: 720,
     date: '2026-03-27',
     comment: 'Restaurant',
-    isRealBankAction: false,
   },
   {
     transactionId: 'txn-004',
     accountId: 'acc-002',
     amount: 500,
     transactionType: 'expense',
-    ilsAmount: 500,
     date: '2026-04-24',
     comment: 'Salary deposit',
-    isRealBankAction: true,
   },
   {
     transactionId: 'txn-005',
     accountId: 'acc-002',
     amount: -700,
     transactionType: 'expense',
-    ilsAmount: -700,
     date: '2026-03-28',
     comment: 'Utility bill',
-    isRealBankAction: true,
   },
   {
     transactionId: 'txn-005',
     accountId: 'acc-002',
     amount: -100,
     transactionType: 'expense',
-    ilsAmount: -100,
     date: '2026-04-28',
     comment: 'Utility bill',
-    isRealBankAction: true,
   },
 ];
 
@@ -119,23 +107,23 @@ export const KeeperProvider: React.FC<KeeperProviderProps> = ({ children }) => {
 
   // ===== Account Methods =====
   const getAccounts = (): Account[] => {
-  return accounts.map(account => {
-    // 1. סינון התנועות של החשבון הספציפי
-    const accountTransactions = transactions.filter(t => t.accountId === account.accountId);
+    return accounts.map(account => {
+      // 1. סינון התנועות של החשבון הספציפי
+      const accountTransactions = transactions.filter(t => t.accountId === account.accountId);
 
-    // 2. סכימה ישירה של ה-amount (חיובי או שלילי)
-    const transactionsSum = accountTransactions.reduce((sum, t) => sum + (t.amount || 0), 0);
+      // 2. סכימה ישירה של ה-amount (חיובי או שלילי)
+      const transactionsSum = accountTransactions.reduce((sum, t) => sum + (t.amount || 0), 0);
 
-    // 3. הוספת היתרה ההתחלתית מהגדרות החשבון (אם קיימת כזו בשדה accountBalance המקורי)
-    // הערה: בדרך כלל כשיוצרים חשבון מגדירים לו יתרה התחלתית, אז כדאי להוסיף אותה לסכום התנועות.
-    const initialBalance = account.accountBalance ?? 0; 
+      // 3. הוספת היתרה ההתחלתית מהגדרות החשבון (אם קיימת כזו בשדה accountBalance המקורי)
+      // הערה: בדרך כלל כשיוצרים חשבון מגדירים לו יתרה התחלתית, אז כדאי להוסיף אותה לסכום התנועות.
+      const initialBalance = account.accountBalance ?? 0;
 
-    return {
-      ...account,
-      accountBalance: initialBalance + transactionsSum
-    };
-  });
-};
+      return {
+        ...account,
+        accountBalance: initialBalance + transactionsSum
+      };
+    });
+  };
 
   const addAccount = (account: Account): void => {
     setAccounts((prevAccounts) => [...prevAccounts, account]);

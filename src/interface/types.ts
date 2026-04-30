@@ -4,12 +4,9 @@ export interface Transaction {
     transactionId: string;
     accountId: string;
     amount: number;
-    ilsAmount: number;
     transactionType: TransactionType;
-    /** Date string in YYYY-MM-DD format */
     date: string;
     comment: string;
-    isRealBankAction: boolean;
 }
 
 export interface Account {

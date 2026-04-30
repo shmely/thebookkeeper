@@ -89,7 +89,7 @@ const AccountPage: React.FC = () => {
                         fullWidth
                         startIcon={<Add />}
                         onClick={() => setIsModalOpen(true)}
-                        sx={{ bgcolor: '#7c4dff', borderRadius: 2, height: 48, '&:hover': { bgcolor: '#651fff' } }}
+                        sx={{ gap: 5, bgcolor: '#7c4dff', borderRadius: 2, height: 48, '&:hover': { bgcolor: '#651fff' } }}
                     >
                         הוסף עסקה
                     </Button>
@@ -146,9 +146,9 @@ const AccountPage: React.FC = () => {
                             />
                             <Typography
                                 variant="body1"
-                                sx={{ fontWeight: 700, color: item.ilsAmount >= 0 ? '#2e7d32' : '#d32f2f' }}
+                                sx={{ fontWeight: 700, color: item.amount >= 0 ? '#2e7d32' : '#d32f2f' }}
                             >
-                                ₪{Math.abs(item.ilsAmount)}
+                                ₪{Math.abs(item.amount)}
                             </Typography>
                         </ListItem>
                     ))}
@@ -159,8 +159,10 @@ const AccountPage: React.FC = () => {
             <Fab color="success" sx={{ position: 'fixed', bottom: 20, left: 20, bgcolor: '#4caf50' }}>
                 <WhatsApp />
             </Fab>
+            {accountId &&
 
-            <AddTransactionModal open={isModalOpen} onClose={() => setIsModalOpen(false)} />
+                <AddTransactionModal accountId={accountId} open={isModalOpen} onClose={() => setIsModalOpen(false)} />
+            }
         </Box>
     );
 };
