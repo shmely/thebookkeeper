@@ -1,25 +1,43 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { useKeeper } from '../../context/KeeperContext';
 import {
   Dialog, DialogTitle, DialogContent, DialogActions,
   TextField, Button, Box, ToggleButtonGroup, ToggleButton, Typography
 } from '@mui/material';
 import { ArrowDownward, ArrowUpward } from '@mui/icons-material';
-import { type TransactionType } from '../../interface/types';
+import { type Transaction, type TransactionType } from '../../interface/types';
 import rtlFieldStyle from '../../style/rtlFieldStyle';
 
 interface ModalProps {
   open: boolean;
   onClose: () => void;
   accountId: string;
+  transaction?: Transaction | undefined;
 }
 
-const AddTransactionModal: React.FC<ModalProps> = ({ open, onClose, accountId }) => {
+const AddTransactionModal: React.FC<ModalProps> = ({ open, onClose, accountId, transaction }) => {
   const [type, setType] = useState<TransactionType>('expense');
-  const { addTransaction } = useKeeper();
-  const [amount, setAmount] = useState<string | number>('');
-  const [comment, setComment] = useState('');
-  const [transactionDate, setTransactionDate] = useState<string>(new Date().toISOString().split('T')[0]); // Default to today
+  const { addTransaction, deleteTransaction, updateTransaction } = useKeeper();
+  const [amount, setAmount] = useState<string | number>(transaction?.amount || '');
+  const [comment, setComment] = useState(transaction?.comment || '');
+  const [transactionDate, setTransactionDate] = useState<string>(transaction?.date || new Date().toISOString().split('T')[0]); // Default to today
+
+
+  useEffect(() => {
+    if (transaction) {
+      // If editing an existing transaction
+      setAmount(Math.abs(transaction.amount)); // Use Math.abs so -50 becomes 50 in the input
+      setComment(transaction.comment || '');
+      setType(transaction.transactionType);
+      setTransactionDate(transaction.date);
+    } else {
+      // If adding a new transaction, reset to defaults
+      setAmount('');
+      setComment('');
+      setType('expense');
+      setTransactionDate(new Date().toISOString().split('T')[0]);
+    }
+  }, [transaction, open]);
 
   const handleTypeChange = (
     _event: React.MouseEvent<HTMLElement>,
@@ -50,12 +68,28 @@ const AddTransactionModal: React.FC<ModalProps> = ({ open, onClose, accountId })
     onClose();
   }
 
+  const onChangeDate = (e: React.ChangeEvent<HTMLInputElement>) => {
+    setTransactionDate(e.target.value);
+  }
+
   const handleSubmit = () => {
     // Here you would typically send the new transaction data to your backend or state management
     if (amount === '') return;
     const transactionId: string = crypto.randomUUID();
-    const finalAmount = type === 'expense' ? Number(amount) * -1 : Number(amount); // Negate amount for expenses 
-    addTransaction(accountId, { accountId, transactionType: type, amount: finalAmount, comment, date: transactionDate, transactionId });
+    const finalAmount = type === 'expense' ? Number(amount) * -1 : Number(amount);
+    if (transaction) {
+      updateTransaction(transaction.transactionId, { accountId, transactionType: type, amount: finalAmount, comment, date: transactionDate });
+    } else {
+      addTransaction(accountId, { accountId, transactionType: type, amount: finalAmount, comment, date: transactionDate, transactionId });
+    }
+    handleClose();
+  }
+
+
+  const onDeleteTransaction = () => {
+    if (transaction) {
+      deleteTransaction(transaction.transactionId);
+    }
     handleClose();
   }
 
@@ -144,6 +178,7 @@ const AddTransactionModal: React.FC<ModalProps> = ({ open, onClose, accountId })
             label="תאריך"
             type="date"
             defaultValue={transactionDate}
+            onChange={onChangeDate}
             fullWidth
             slotProps={{
               inputLabel: { shrink: true },
@@ -167,6 +202,15 @@ const AddTransactionModal: React.FC<ModalProps> = ({ open, onClose, accountId })
       </DialogContent>
 
       <DialogActions sx={{ px: 3, pb: 3, pt: 1, justifyContent: 'space-between', gap: 2 }}>
+        {transaction &&
+          <Button
+            color="error"
+            variant="outlined"
+            fullWidth
+            onClick={onDeleteTransaction}>
+            מחק
+          </Button>
+        }
         <Button
           onClick={handleClose}
           variant="outlined"
@@ -182,7 +226,7 @@ const AddTransactionModal: React.FC<ModalProps> = ({ open, onClose, accountId })
           sx={{ borderRadius: 2, height: 45 }}
           onClick={handleSubmit}
         >
-          הוסף
+          {transaction ? 'עדכן' : 'הוסף'}
         </Button>
       </DialogActions>
     </Dialog>

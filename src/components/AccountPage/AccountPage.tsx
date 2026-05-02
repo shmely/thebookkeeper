@@ -22,6 +22,8 @@ interface DateRange {
 }
 
 
+
+
 const getCurrentMonthRange = (): DateRange => {
     const now = new Date();
     const year = now.getFullYear();
@@ -43,6 +45,7 @@ const AccountPage: React.FC = () => {
     const { accountId } = useParams<RouteParams>();
     const [anchorEl, setAnchorEl] = useState<null | HTMLElement>(null);
     const [isModalOpen, setIsModalOpen] = useState<boolean>(false);
+    const [transaction, setTransaction] = useState<Transaction | undefined>(undefined);
     const { getTransactions, getAccounts } = useKeeper();
     const navigate = useNavigate();
     const transactions: Transaction[] = getTransactions(accountId);
@@ -52,6 +55,17 @@ const AccountPage: React.FC = () => {
 
     const handleMenuOpen = (event: React.MouseEvent<HTMLButtonElement>) => {
         setAnchorEl(event.currentTarget);
+    };
+
+    const UpdateTransaction = (transaction: Transaction | undefined): void => {
+
+        setTransaction(transaction);
+        setIsModalOpen(true);
+
+    };
+    const handleOnCloseTransactionModal = (): void => {
+        setTransaction(undefined);
+        setIsModalOpen(false);
     };
 
     const handleMenuClose = () => setAnchorEl(null);
@@ -123,30 +137,50 @@ const AccountPage: React.FC = () => {
                 </Menu>
 
                 {/* Transactions List */}
-                <List sx={{ bgcolor: 'white', borderRadius: 3, boxShadow: '0 2px 8px rgba(0,0,0,0.04)', overflow: 'hidden' }}>
+                <List sx={{ bgcolor: 'white', borderRadius: 3, boxShadow: '0 2px 8px rgba(0,0,0,0.04)', overflow: 'hidden', direction: 'rtl' }}>
                     {transactions.filter((transaction) => {
                         const date = new Date(transaction.date);
                         return date >= dateRange.from && date <= dateRange.to;
                     }).map((item) => (
                         <ListItem
+
+                            onClick={() => UpdateTransaction(item)}
                             key={item.transactionId}
                             divider
-                            sx={{ py: 1.5, '&:last-child': { borderBottom: 'none' } }}
+                            sx={{
+                                py: 1.5,
+                                display: 'flex',
+                                flexDirection: 'row', // Ensures horizontal flow
+                                alignItems: 'baseline',
+                                gap: 2,
+                                '&:last-child': { borderBottom: 'none' },
+                                cursor: 'pointer',
+                                '&:hover': { bgcolor: '#f5f5f5' }
+                            }}
                         >
-                            <ListItemIcon sx={{ minWidth: 44 }}>
+                            <ListItemIcon sx={{ minWidth: 'auto' }}>
                                 <Box sx={{ bgcolor: '#f3e5f5', p: 1, borderRadius: 1.5, display: 'flex' }}>
                                     <AccountBalanceWallet sx={{ color: '#7c4dff', fontSize: 20 }} />
                                 </Box>
                             </ListItemIcon>
-                            <ListItemText
-                                primary={item.comment}
-                                secondary={item.date}
-                                primaryTypographyProps={{ fontWeight: 500, variant: 'body2' }}
-                                sx={{ textAlign: 'right' }}
-                            />
+                            <Typography variant="caption" sx={{ color: 'text.secondary', minWidth: '80px', fontSize: 18 }}>
+                                {item.date}
+                            </Typography>
+                            <Typography
+                                variant="body2"
+                                sx={{
+                                    fontWeight: 500,
+                                    flexGrow: 1,
+                                    textAlign: 'right',
+                                    color: '#111827',
+                                    fontSize: 18
+                                }}
+                            >
+                                {item.comment}
+                            </Typography>
                             <Typography
                                 variant="body1"
-                                sx={{ fontWeight: 700, color: item.amount >= 0 ? '#2e7d32' : '#d32f2f' }}
+                                sx={{ fontWeight: 700, color: item.amount >= 0 ? '#2e7d32' : '#d32f2f', whiteSpace: 'nowrap', fontSize: 18 }}
                             >
                                 ₪{Math.abs(item.amount)}
                             </Typography>
@@ -161,7 +195,7 @@ const AccountPage: React.FC = () => {
             </Fab>
             {accountId &&
 
-                <AddTransactionModal accountId={accountId} open={isModalOpen} onClose={() => setIsModalOpen(false)} />
+                <AddTransactionModal transaction={transaction} accountId={accountId} open={isModalOpen} onClose={handleOnCloseTransactionModal} />
             }
         </Box>
     );
