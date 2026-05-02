@@ -62,7 +62,7 @@ const AddAccountDialog: React.FC<AddAccountDialogProps> = ({ open, onClose, onAd
     const handleSubmit = () => {
         const newAccount: Account = {
             ...formData,
-            accountId: crypto.randomUUID(), // Generating a temp ID
+           
         };
         onAdd(newAccount);
         handleClose();

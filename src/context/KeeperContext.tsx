@@ -1,96 +1,19 @@
-import React, { createContext, useContext, useState, type ReactNode } from 'react';
+import React, { createContext, useContext, useEffect, useState, type ReactNode } from 'react';
 import type { Transaction, Account } from '../interface/types';
+import { auth, db } from '../fireebaseConfig';
+import { addDoc, collection, deleteDoc, doc, onSnapshot, updateDoc, writeBatch } from 'firebase/firestore';
+import { onAuthStateChanged, type User } from 'firebase/auth';
 
-// ===== Dummy Data =====
-const DUMMY_ACCOUNTS: Account[] = [
-  {
-    accountId: 'acc-001',
-    accountNickname: 'אלון ומעין יערי',
-    firstName: 'אלון',
-    lastName: 'יערי',
-    currencyCode: 'ILS'
-  },
-  {
-    accountId: 'acc-002',
-    accountNickname: 'איתמר יתרה',
-    firstName: 'איתמר',
-    lastName: 'יערי',
-    currencyCode: 'ILS'
-  },
-  {
-    accountId: 'acc-003',
-    accountNumber: 9876543210,
-    accountNickname: ' יותם',
-    currencyCode: 'ILS'
-  },
-];
-
-const DUMMY_TRANSACTIONS: Transaction[] = [
-  {
-    transactionId: 'txn-001',
-    accountId: 'acc-001',
-    amount: 100,
-    date: '2026-03-25',
-    transactionType: 'expense',
-    comment: 'Grocery shopping'
-  },
-  {
-    transactionId: 'txn-002',
-    accountId: 'acc-001',
-    amount: 350,
-    transactionType: 'income',
-    date: '2026-03-26',
-    comment: 'Gas station',
-  },
-  {
-    transactionId: 'txn-003',
-    accountId: 'acc-001',
-    amount: 200,
-    transactionType: 'income',
-    date: '2026-03-27',
-    comment: 'Restaurant',
-  },
-  {
-    transactionId: 'txn-004',
-    accountId: 'acc-002',
-    amount: 500,
-    transactionType: 'expense',
-    date: '2026-04-24',
-    comment: 'Salary deposit',
-  },
-  {
-    transactionId: 'txn-005',
-    accountId: 'acc-002',
-    amount: -700,
-    transactionType: 'expense',
-    date: '2026-03-28',
-    comment: 'Utility bill',
-  },
-  {
-    transactionId: 'txn-005',
-    accountId: 'acc-002',
-    amount: -100,
-    transactionType: 'expense',
-    date: '2026-04-28',
-    comment: 'Utility bill',
-  },
-];
-
-// ===== Context Types =====
 interface KeeperContextType {
   getAccounts: () => Account[];
-  addAccount: (account: Account) => void;
-  updateAccount: (accountId: string, account: Partial<Account>) => void;
-  deleteAccount: (accountId: string) => void;
-
-  // Transaction Methods
+  addAccount: (account: Omit<Account, 'accountId'>) => Promise<void>;
+  updateAccount: (accountId: string, updates: Partial<Account>) => Promise<void>;
+  deleteAccount: (accountId: string) => Promise<void>;
   transactions: Transaction[];
-  getTransactions: (
-    accountId: string | undefined
-  ) => Transaction[];
-  addTransaction: (accountId: string, transaction: Transaction) => void;
-  updateTransaction: (transactionId: string, transaction: Partial<Transaction>) => void;
-  deleteTransaction: (transactionId: string) => void;
+  getTransactions: (accountId: string | undefined) => Transaction[];
+  addTransaction: (accountId: string, transaction: Omit<Transaction, 'transactionId' | 'accountId'>) => Promise<void>;
+  updateTransaction: (transactionId: string, updates: Partial<Transaction>) => Promise<void>;
+  deleteTransaction: (transactionId: string) => Promise<void>;
 }
 
 // ===== Context Creation =====
@@ -102,20 +25,57 @@ interface KeeperProviderProps {
 }
 
 export const KeeperProvider: React.FC<KeeperProviderProps> = ({ children }) => {
-  const [accounts, setAccounts] = useState<Account[]>(DUMMY_ACCOUNTS);
-  const [transactions, setTransactions] = useState<Transaction[]>(DUMMY_TRANSACTIONS);
+  const [accounts, setAccounts] = useState<Account[]>([]);
+  const [transactions, setTransactions] = useState<Transaction[]>([]);
+  const [user, setUser] = useState<User | null>(null);
+
+  useEffect(() => {
+    const unsubscribeAuth = onAuthStateChanged(auth, (currentUser) => {
+      setUser(currentUser); // This forces React to update when they log in!
+    });
+    return () => unsubscribeAuth();
+  }, []);
+
+  useEffect(() => {
+    if (!user) {
+      setAccounts([]);
+      setTransactions([]);
+      return;
+    }
+
+    // 1. Listen to this user's Accounts
+    const accountsRef = collection(db, 'users', user.uid, 'accounts');
+    const unsubscribeAccounts = onSnapshot(accountsRef, (snapshot) => {
+      const fetchedAccounts = snapshot.docs.map(doc => ({
+        accountId: doc.id, // FIREBASE GENERATED ID
+        ...doc.data()
+      })) as Account[];
+      setAccounts(fetchedAccounts);
+    });
+
+    // 2. Listen to this user's Transactions
+    const transactionsRef = collection(db, 'users', user.uid, 'transactions');
+    const unsubscribeTransactions = onSnapshot(transactionsRef, (snapshot) => {
+      const fetchedTransactions = snapshot.docs.map(doc => ({
+        transactionId: doc.id, // FIREBASE GENERATED ID
+        ...doc.data()
+      })) as Transaction[];
+      setTransactions(fetchedTransactions);
+    });
+
+    // Cleanup listeners when component unmounts
+    return () => {
+      unsubscribeAccounts();
+      unsubscribeTransactions();
+    };
+  }, [user]);
+
 
   // ===== Account Methods =====
   const getAccounts = (): Account[] => {
     return accounts.map(account => {
-      // 1. סינון התנועות של החשבון הספציפי
       const accountTransactions = transactions.filter(t => t.accountId === account.accountId);
-
-      // 2. סכימה ישירה של ה-amount (חיובי או שלילי)
       const transactionsSum = accountTransactions.reduce((sum, t) => sum + (t.amount || 0), 0);
-
-      // 3. הוספת היתרה ההתחלתית מהגדרות החשבון (אם קיימת כזו בשדה accountBalance המקורי)
-      // הערה: בדרך כלל כשיוצרים חשבון מגדירים לו יתרה התחלתית, אז כדאי להוסיף אותה לסכום התנועות.
       const initialBalance = account.accountBalance ?? 0;
 
       return {
@@ -125,70 +85,67 @@ export const KeeperProvider: React.FC<KeeperProviderProps> = ({ children }) => {
     });
   };
 
-  const addAccount = (account: Account): void => {
-    setAccounts((prevAccounts) => [...prevAccounts, account]);
+  const addAccount = async (account: Omit<Account, 'accountId'>) => {
+    if (!user) return;
+    if (!account.accountBalance) {
+      account.accountBalance = 0; // Default to 0 if not provided
+    }
+    const accountsRef = collection(db, 'users', user.uid, 'accounts');
+    await addDoc(accountsRef, account);
   };
 
-  const updateAccount = (accountId: string, updates: Partial<Account>): void => {
-    setAccounts((prevAccounts) =>
-      prevAccounts.map((account) =>
-        account.accountId === accountId ? { ...account, ...updates } : account
-      )
-    );
+  const updateAccount = async (accountId: string, updates: Partial<Account>) => {
+    if (!user) return;
+    const accountDocRef = doc(db, 'users', user.uid, 'accounts', accountId);
+    await updateDoc(accountDocRef, updates);
   };
 
-  const deleteAccount = (accountId: string): void => {
-    setAccounts((prevAccounts) =>
-      prevAccounts.filter((account) => account.accountId !== accountId)
-    );
-    // Also delete all transactions for this account
-    setTransactions((prevTransactions) =>
-      prevTransactions.filter((transaction) => transaction.accountId !== accountId)
-    );
+  const deleteAccount = async (accountId: string) => {
+    if (!user) return;
+
+    // 1. Delete the account document
+    const accountDocRef = doc(db, 'users', user.uid, 'accounts', accountId);
+    await deleteDoc(accountDocRef);
+
+    // 2. Delete all transactions belonging to this account using a Batch
+    const batch = writeBatch(db);
+    const txnsToDelete = transactions.filter(t => t.accountId === accountId);
+
+    txnsToDelete.forEach(txn => {
+      if (!txn.transactionId) return; // Safety check
+      const txnRef = doc(db, 'users', user.uid, 'transactions', txn?.transactionId);
+      batch.delete(txnRef);
+    });
+
+    await batch.commit();
   };
 
   // ===== Transaction Methods =====
-  const getTransactions = (
-    accountId: string | undefined
-  ): Transaction[] => {
-    if (!accountId) {
-      console.warn("getTransactions called without accountId");
-      return [];
-    }
-    const accountMatch = transactions.filter(transaction => transaction.accountId === accountId);
-    // const dateMatch =
-    //   (!dateFrom || transaction.date >= dateFrom) &&
-    //   (!dateTo || transaction.date <= dateTo);
-    return accountMatch;
+  const getTransactions = (accountId: string | undefined): Transaction[] => {
+    if (!accountId) return [];
+    return transactions.filter(t => t.accountId === accountId);
   };
 
-  const addTransaction = (accountId: string, transaction: Transaction): void => {
-    const newTransaction: Transaction = {
+  const addTransaction = async (accountId: string, transaction: Omit<Transaction, 'transactionId' | 'accountId'>) => {
+    if (!user) return;
+    const transactionsRef = collection(db, 'users', user.uid, 'transactions');
+    await addDoc(transactionsRef, {
       ...transaction,
-      accountId,
-    };
-    setTransactions((prevTransactions) => [...prevTransactions, newTransaction]);
+      accountId // Attach the accountId to the transaction
+    });
   };
 
-  const updateTransaction = (
-    transactionId: string,
-    updates: Partial<Transaction>
-  ): void => {
-    setTransactions((prevTransactions) =>
-      prevTransactions.map((transaction) =>
-        transaction.transactionId === transactionId
-          ? { ...transaction, ...updates }
-          : transaction
-      )
-    );
+  const updateTransaction = async (transactionId: string, updates: Partial<Transaction>) => {
+    if (!user) return;
+    const txnDocRef = doc(db, 'users', user.uid, 'transactions', transactionId);
+    await updateDoc(txnDocRef, updates);
   };
 
-  const deleteTransaction = (transactionId: string): void => {
-    setTransactions((prevTransactions) =>
-      prevTransactions.filter((transaction) => transaction.transactionId !== transactionId)
-    );
+  const deleteTransaction = async (transactionId: string) => {
+    if (!user) return;
+    const txnDocRef = doc(db, 'users', user.uid, 'transactions', transactionId);
+    await deleteDoc(txnDocRef);
   };
-
   const value: KeeperContextType = {
     getAccounts,
     addAccount,

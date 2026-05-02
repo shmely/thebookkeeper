@@ -1,7 +1,7 @@
 export type TransactionType = 'income' | 'expense';
 
 export interface Transaction {
-    transactionId: string;
+    transactionId?: string;
     accountId: string;
     amount: number;
     transactionType: TransactionType;
@@ -10,7 +10,7 @@ export interface Transaction {
 }
 
 export interface Account {
-    accountId: string;
+    accountId?: string;
     accountNumber?: number;
     accountNickname: string;
     firstName?: string;

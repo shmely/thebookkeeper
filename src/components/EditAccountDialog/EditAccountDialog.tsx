@@ -63,9 +63,9 @@ const EditAccountDialog: React.FC<EditAccountDialog> = ({ open, onClose, account
     const handleSubmit = () => {
         const newAccount: Account = {
             ...formData,
-            accountId: crypto.randomUUID(), // Generating a temp ID
+
         };
-        if (account) {
+        if (account && account?.accountId) {
             updateAccount(account.accountId, formData);
         } else {
             addAccount(newAccount);

@@ -25,18 +25,24 @@ export default function AccountItem({ account }: { account: Account }) {
     };
 
     const handleDelete = () => {
-        deleteAccount(account.accountId);
+        if (!account?.accountId) return;
+        deleteAccount(account?.accountId);
     }
 
-    const handleTransactionDialog = (accountId: string) => {
+    const handleTransactionDialog = (accountId?: string) => {
+        if (!accountId) return;
         navigate(`base/account/${accountId}`);
+    }
+
+    if (!account?.accountId) {      
+        return null; // or a placeholder
     }
 
 
 
     return (
         <Paper elevation={3} className='account-item'>
-            <div role='button' className='account-button' onClick={() => handleTransactionDialog(account.accountId)}>
+            <div role='button' className='account-button' aria-disabled={!account?.accountId} onClick={() => handleTransactionDialog(account?.accountId)}>
                 <div className='account-button-title'>
                     <h2>{account.accountNickname}</h2>
                     <div onClick={(e) => e.stopPropagation()}>

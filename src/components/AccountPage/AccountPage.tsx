@@ -2,7 +2,7 @@ import React, { useState } from 'react';
 import { useNavigate, useParams } from 'react-router-dom';
 import {
     Box, Container, Typography, Card, CardContent, Button, IconButton,
-    List, ListItem, ListItemIcon, ListItemText, Chip, Menu, MenuItem, Fab
+    List, ListItem, ListItemIcon, Chip, Menu, MenuItem, Fab, CircularProgress
 } from '@mui/material';
 import {
     ArrowForward, Add, Refresh, CalendarToday,
@@ -12,6 +12,7 @@ import {
 import { useKeeper } from '../../context/KeeperContext';
 import AddTransactionModal from './AddTransactionModal';
 import type { Transaction } from '../../interface/types';
+
 type RouteParams = {
     accountId: string;
 };
@@ -21,54 +22,62 @@ interface DateRange {
     to: Date;
 }
 
-
-
-
 const getCurrentMonthRange = (): DateRange => {
     const now = new Date();
     const year = now.getFullYear();
     const month = now.getMonth();
 
-    // יום ראשון של החודש הנוכחי
     const from = new Date(year, month, 1);
-
-    // יום אחרון של החודש הנוכחי (יום 0 של החודש הבא)
     const to = new Date(year, month + 1, 0);
-
-    // הגדרת השעה לסוף היום (23:59:59) כדי שהטווח יכלול את כל היום האחרון
     to.setHours(23, 59, 59, 999);
 
     return { from, to };
 };
 
 const AccountPage: React.FC = () => {
+    // 1. Safely extract accountId
     const { accountId } = useParams<RouteParams>();
+    const navigate = useNavigate();
+
     const [anchorEl, setAnchorEl] = useState<null | HTMLElement>(null);
     const [isModalOpen, setIsModalOpen] = useState<boolean>(false);
     const [transaction, setTransaction] = useState<Transaction | undefined>(undefined);
+
     const { getTransactions, getAccounts } = useKeeper();
-    const navigate = useNavigate();
+
+    // 2. Fetch data based on the ID
     const transactions: Transaction[] = getTransactions(accountId);
-    const dateRange = getCurrentMonthRange();
     const currentAccount = getAccounts().find(account => account.accountId === accountId);
-    const isBalancePositive = currentAccount?.accountBalance !== undefined && currentAccount.accountBalance >= 0;
+    const dateRange = getCurrentMonthRange();
+
+    // 3. FIREBASE GUARD: Wait for data to load before rendering the UI
+    if (!currentAccount) {
+        return (
+            <Box sx={{ display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', minHeight: '100vh', bgcolor: '#f9f9f9' }}>
+                <CircularProgress sx={{ color: '#6200ea', mb: 2 }} />
+                <Typography variant="h6" color="text.secondary">טוען נתונים...</Typography>
+            </Box>
+        );
+    }
+
+    // Now it is 100% safe to calculate the balance because we know currentAccount exists!
+    const isBalancePositive = (currentAccount?.accountBalance ?? 0) >= 0;
 
     const handleMenuOpen = (event: React.MouseEvent<HTMLButtonElement>) => {
         setAnchorEl(event.currentTarget);
     };
 
-    const UpdateTransaction = (transaction: Transaction | undefined): void => {
+    const handleMenuClose = () => setAnchorEl(null);
 
+    const UpdateTransaction = (transaction: Transaction | undefined): void => {
         setTransaction(transaction);
         setIsModalOpen(true);
-
     };
+
     const handleOnCloseTransactionModal = (): void => {
         setTransaction(undefined);
         setIsModalOpen(false);
     };
-
-    const handleMenuClose = () => setAnchorEl(null);
 
     return (
         <Box sx={{ direction: 'rtl', bgcolor: '#f9f9f9', minHeight: '100vh', pt: 2, pb: 10 }}>
@@ -83,13 +92,17 @@ const AccountPage: React.FC = () => {
                 {/* Balance Card */}
                 <Card sx={{ borderRadius: 4, mb: 3, boxShadow: '0 4px 12px rgba(0,0,0,0.05)', textAlign: 'center' }}>
                     <CardContent sx={{ pt: 1 }}>
-                        <Typography variant="h5" sx={{ fontWeight: 700, color: '#1a237e', mb: 1 }}>{currentAccount?.accountNickname}</Typography>
+                        <Typography variant="h5" sx={{ fontWeight: 700, color: '#1a237e', mb: 1 }}>
+                            {currentAccount.accountNickname}
+                        </Typography>
                         <Typography variant="overline" color="text.secondary">יתרה נוכחית</Typography>
-                        <Typography variant="h3" sx={{ fontWeight: 800, color: isBalancePositive ? '#2e7d32' : '#d32f2f', my: 1 }}>₪{currentAccount?.accountBalance?.toLocaleString('he-IL')}</Typography>
+                        <Typography variant="h3" sx={{ fontWeight: 800, color: isBalancePositive ? '#2e7d32' : '#d32f2f', my: 1 }}>
+                            ₪{currentAccount.accountBalance?.toLocaleString('he-IL')}
+                        </Typography>
                         <Chip
-                            icon={isBalancePositive ? <TrendingUp style={{ color: isBalancePositive ? '#2e7d32' : '#d32f2f' }} /> : <TrendingDown style={{ color: isBalancePositive ? '#2e7d32' : '#d32f2f' }} />}
+                            icon={isBalancePositive ? <TrendingUp style={{ color: '#2e7d32' }} /> : <TrendingDown style={{ color: '#d32f2f' }} />}
                             label={isBalancePositive ? 'יתרה חיובית' : 'יתרה שלילית'}
-                            color="success"
+                            color={isBalancePositive ? "success" : "error"}
                             variant="outlined"
                             sx={{ fontWeight: 'bold', border: 'none' }}
                         />
@@ -138,54 +151,63 @@ const AccountPage: React.FC = () => {
 
                 {/* Transactions List */}
                 <List sx={{ bgcolor: 'white', borderRadius: 3, boxShadow: '0 2px 8px rgba(0,0,0,0.04)', overflow: 'hidden', direction: 'rtl' }}>
-                    {transactions.filter((transaction) => {
-                        const date = new Date(transaction.date);
-                        return date >= dateRange.from && date <= dateRange.to;
-                    }).map((item) => (
-                        <ListItem
-
-                            onClick={() => UpdateTransaction(item)}
-                            key={item.transactionId}
-                            divider
-                            sx={{
-                                py: 1.5,
-                                display: 'flex',
-                                flexDirection: 'row', // Ensures horizontal flow
-                                alignItems: 'baseline',
-                                gap: 2,
-                                '&:last-child': { borderBottom: 'none' },
-                                cursor: 'pointer',
-                                '&:hover': { bgcolor: '#f5f5f5' }
-                            }}
-                        >
-                            <ListItemIcon sx={{ minWidth: 'auto' }}>
-                                <Box sx={{ bgcolor: '#f3e5f5', p: 1, borderRadius: 1.5, display: 'flex' }}>
-                                    <AccountBalanceWallet sx={{ color: '#7c4dff', fontSize: 20 }} />
-                                </Box>
-                            </ListItemIcon>
-                            <Typography variant="caption" sx={{ color: 'text.secondary', minWidth: '80px', fontSize: 18 }}>
-                                {item.date}
-                            </Typography>
-                            <Typography
-                                variant="body2"
+                    {transactions
+                        .filter((transaction) => {
+                            const date = new Date(transaction.date);
+                            return date >= dateRange.from && date <= dateRange.to;
+                        })
+                        // 4. ADDED SORTING: Newest transactions show up first
+                        .sort((a, b) => new Date(b.date).getTime() - new Date(a.date).getTime())
+                        .map((item) => (
+                            <ListItem
+                                onClick={() => UpdateTransaction(item)}
+                                key={item.transactionId}
+                                divider
                                 sx={{
-                                    fontWeight: 500,
-                                    flexGrow: 1,
-                                    textAlign: 'right',
-                                    color: '#111827',
-                                    fontSize: 18
+                                    py: 1.5,
+                                    display: 'flex',
+                                    flexDirection: 'row',
+                                    alignItems: 'baseline',
+                                    gap: 2,
+                                    '&:last-child': { borderBottom: 'none' },
+                                    cursor: 'pointer',
+                                    '&:hover': { bgcolor: '#f5f5f5' }
                                 }}
                             >
-                                {item.comment}
-                            </Typography>
-                            <Typography
-                                variant="body1"
-                                sx={{ fontWeight: 700, color: item.amount >= 0 ? '#2e7d32' : '#d32f2f', whiteSpace: 'nowrap', fontSize: 18 }}
-                            >
-                                ₪{Math.abs(item.amount)}
-                            </Typography>
-                        </ListItem>
-                    ))}
+                                <ListItemIcon sx={{ minWidth: 'auto' }}>
+                                    <Box sx={{ bgcolor: '#f3e5f5', p: 1, borderRadius: 1.5, display: 'flex' }}>
+                                        <AccountBalanceWallet sx={{ color: '#7c4dff', fontSize: 20 }} />
+                                    </Box>
+                                </ListItemIcon>
+                                <Typography variant="caption" sx={{ color: 'text.secondary', minWidth: '80px', fontSize: 18 }}>
+                                    {item.date}
+                                </Typography>
+                                <Typography
+                                    variant="body2"
+                                    sx={{
+                                        fontWeight: 500,
+                                        flexGrow: 1,
+                                        textAlign: 'right',
+                                        color: '#111827',
+                                        fontSize: 18
+                                    }}
+                                >
+                                    {item.comment}
+                                </Typography>
+                                <Typography
+                                    variant="body1"
+                                    sx={{ fontWeight: 700, color: item.amount >= 0 ? '#2e7d32' : '#d32f2f', whiteSpace: 'nowrap', fontSize: 18 }}
+                                >
+                                    {item.amount > 0 ? '+' : ''}₪{Math.abs(item.amount)}
+                                </Typography>
+                            </ListItem>
+                        ))}
+
+                    {transactions.length === 0 && (
+                        <Typography sx={{ p: 4, textAlign: 'center', color: 'text.secondary' }}>
+                            אין תנועות בחודש זה.
+                        </Typography>
+                    )}
                 </List>
             </Container>
 
@@ -193,13 +215,17 @@ const AccountPage: React.FC = () => {
             <Fab color="success" sx={{ position: 'fixed', bottom: 20, left: 20, bgcolor: '#4caf50' }}>
                 <WhatsApp />
             </Fab>
-            {accountId &&
 
-                <AddTransactionModal transaction={transaction} accountId={accountId} open={isModalOpen} onClose={handleOnCloseTransactionModal} />
-            }
+            {accountId && (
+                <AddTransactionModal
+                    transaction={transaction}
+                    accountId={accountId}
+                    open={isModalOpen}
+                    onClose={handleOnCloseTransactionModal}
+                />
+            )}
         </Box>
     );
 };
 
 export default AccountPage;
-
