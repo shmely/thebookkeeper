@@ -75,12 +75,11 @@ const AddTransactionModal: React.FC<ModalProps> = ({ open, onClose, accountId, t
   const handleSubmit = () => {
     // Here you would typically send the new transaction data to your backend or state management
     if (amount === '') return;
-    const transactionId: string = crypto.randomUUID();
     const finalAmount = type === 'expense' ? Number(amount) * -1 : Number(amount);
     if (transaction) {
       updateTransaction(transaction.transactionId, { accountId, transactionType: type, amount: finalAmount, comment, date: transactionDate });
     } else {
-      addTransaction(accountId, { accountId, transactionType: type, amount: finalAmount, comment, date: transactionDate, transactionId });
+      addTransaction(accountId, { transactionType: type, amount: finalAmount, comment, date: transactionDate });
     }
     handleClose();
   }
@@ -110,7 +109,7 @@ const AddTransactionModal: React.FC<ModalProps> = ({ open, onClose, accountId, t
         }
       }}
     >
-      <DialogTitle sx={{ textAlign: 'center', fontWeight: 700, pb: 1 }}>
+      <DialogTitle sx={{ textAlign: 'center', fontWeight: 700, pb: 1, color: 'text.primary' }}>
         הוסף עסקה חדשה
       </DialogTitle>
 

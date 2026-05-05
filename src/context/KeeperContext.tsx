@@ -12,8 +12,8 @@ interface KeeperContextType {
   transactions: Transaction[];
   getTransactions: (accountId: string | undefined) => Transaction[];
   addTransaction: (accountId: string, transaction: Omit<Transaction, 'transactionId' | 'accountId'>) => Promise<void>;
-  updateTransaction: (transactionId: string, updates: Partial<Transaction>) => Promise<void>;
-  deleteTransaction: (transactionId: string) => Promise<void>;
+  updateTransaction: (transactionId: string | undefined, updates: Partial<Transaction>) => Promise<void>;
+  deleteTransaction: (transactionId: string | undefined) => Promise<void>;
 }
 
 // ===== Context Creation =====
@@ -126,8 +126,8 @@ export const KeeperProvider: React.FC<KeeperProviderProps> = ({ children }) => {
     return transactions.filter(t => t.accountId === accountId);
   };
 
-  const addTransaction = async (accountId: string, transaction: Omit<Transaction, 'transactionId' | 'accountId'>) => {
-    if (!user) return;
+  const addTransaction = async (accountId: string | undefined, transaction: Omit<Transaction, 'transactionId' | 'accountId'>) => {
+    if (!user || !accountId) return;
     const transactionsRef = collection(db, 'users', user.uid, 'transactions');
     await addDoc(transactionsRef, {
       ...transaction,
@@ -135,14 +135,14 @@ export const KeeperProvider: React.FC<KeeperProviderProps> = ({ children }) => {
     });
   };
 
-  const updateTransaction = async (transactionId: string, updates: Partial<Transaction>) => {
-    if (!user) return;
+  const updateTransaction = async (transactionId: string | undefined, updates: Partial<Transaction>) => {
+    if (!user || !transactionId) return;
     const txnDocRef = doc(db, 'users', user.uid, 'transactions', transactionId);
     await updateDoc(txnDocRef, updates);
   };
 
-  const deleteTransaction = async (transactionId: string) => {
-    if (!user) return;
+  const deleteTransaction = async (transactionId: string | undefined) => {
+    if (!user || !transactionId) return;
     const txnDocRef = doc(db, 'users', user.uid, 'transactions', transactionId);
     await deleteDoc(txnDocRef);
   };

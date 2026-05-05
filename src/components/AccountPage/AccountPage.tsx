@@ -2,11 +2,11 @@ import React, { useState } from 'react';
 import { useNavigate, useParams } from 'react-router-dom';
 import {
     Box, Container, Typography, Card, CardContent, Button, IconButton,
-    List, ListItem, ListItemIcon, Chip, Menu, MenuItem, Fab, CircularProgress
+    List, ListItem, ListItemIcon, Chip, Menu, MenuItem, CircularProgress
 } from '@mui/material';
 import {
     ArrowForward, Add, Refresh, CalendarToday,
-    AccountBalanceWallet, TrendingUp, WhatsApp,
+    AccountBalanceWallet, TrendingUp,
     TrendingDown
 } from '@mui/icons-material';
 import { useKeeper } from '../../context/KeeperContext';
@@ -34,6 +34,26 @@ const getCurrentMonthRange = (): DateRange => {
     return { from, to };
 };
 
+const getLast3monthsRange = (): DateRange => {
+    const now = new Date();
+    const year = now.getFullYear();
+    const month = now.getMonth();
+    const from = new Date(year, month - 3, 1);
+    const to = new Date(year, month, 0);
+    to.setHours(23, 59, 59, 999);
+    return { from, to };
+};
+
+const getLast6monthsRange = (): DateRange => {
+    const now = new Date();
+    const year = now.getFullYear();
+    const month = now.getMonth();
+    const from = new Date(year, month - 6, 1);
+    const to = new Date(year, month, 0);
+    to.setHours(23, 59, 59, 999);
+    return { from, to };
+};
+
 const AccountPage: React.FC = () => {
     // 1. Safely extract accountId
     const { accountId } = useParams<RouteParams>();
@@ -42,13 +62,14 @@ const AccountPage: React.FC = () => {
     const [anchorEl, setAnchorEl] = useState<null | HTMLElement>(null);
     const [isModalOpen, setIsModalOpen] = useState<boolean>(false);
     const [transaction, setTransaction] = useState<Transaction | undefined>(undefined);
-
+    const [dateRange, setDateRange] = useState<DateRange>(getCurrentMonthRange());
+    const [dateRangeText, setDateRangeText] = useState<string>('חודש אחרון');
     const { getTransactions, getAccounts } = useKeeper();
 
     // 2. Fetch data based on the ID
     const transactions: Transaction[] = getTransactions(accountId);
     const currentAccount = getAccounts().find(account => account.accountId === accountId);
-    const dateRange = getCurrentMonthRange();
+
 
     // 3. FIREBASE GUARD: Wait for data to load before rendering the UI
     if (!currentAccount) {
@@ -77,6 +98,23 @@ const AccountPage: React.FC = () => {
     const handleOnCloseTransactionModal = (): void => {
         setTransaction(undefined);
         setIsModalOpen(false);
+    };
+
+    const onChangeDateRange = (event: React.MouseEvent<HTMLElement>): void => {
+        const text = (event.target as HTMLElement).innerText;
+        if (text === 'חודש אחרון') {
+            setDateRange(getCurrentMonthRange());
+
+        }
+        else if (text === '3 חודשים אחרונים') {
+            setDateRange(getLast3monthsRange());
+        }
+        else if (text === '6 חודשים אחרונים') {
+            setDateRange(getLast6monthsRange());
+        }
+        else {//temp do nothing, should be use from open daterange picker}
+        }
+        setDateRangeText(text);
     };
 
     return (
@@ -131,7 +169,7 @@ const AccountPage: React.FC = () => {
                         onClick={handleMenuOpen}
                         sx={{ borderRadius: 2, height: 48, borderColor: '#7c4dff', color: '#7c4dff', whiteSpace: 'nowrap', minWidth: '150px', gap: 1.5 }}
                     >
-                        חודש אחרון
+                        {dateRangeText}
                     </Button>
                 </Box>
 
@@ -143,7 +181,7 @@ const AccountPage: React.FC = () => {
                     PaperProps={{ sx: { width: 200, borderRadius: 2, boxShadow: 3 } }}
                 >
                     {['חודש אחרון', '3 חודשים אחרונים', '6 חודשים אחרונים', '12 חודשים אחרונים', 'מתחילת השנה', 'טווח מותאם אישית'].map((text) => (
-                        <MenuItem key={text} onClick={handleMenuClose} sx={{ textAlign: 'right', py: 1.5 }}>
+                        <MenuItem key={text} onClick={onChangeDateRange} sx={{ textAlign: 'right', py: 1.5 }}>
                             {text}
                         </MenuItem>
                     ))}
@@ -198,7 +236,7 @@ const AccountPage: React.FC = () => {
                                     variant="body1"
                                     sx={{ fontWeight: 700, color: item.amount >= 0 ? '#2e7d32' : '#d32f2f', whiteSpace: 'nowrap', fontSize: 18 }}
                                 >
-                                    {item.amount > 0 ? '+' : ''}₪{Math.abs(item.amount)}
+                                    {Number(Math.abs(item.amount)).toLocaleString('he-IL', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
                                 </Typography>
                             </ListItem>
                         ))}
@@ -210,11 +248,6 @@ const AccountPage: React.FC = () => {
                     )}
                 </List>
             </Container>
-
-            {/* Floating Action Button */}
-            <Fab color="success" sx={{ position: 'fixed', bottom: 20, left: 20, bgcolor: '#4caf50' }}>
-                <WhatsApp />
-            </Fab>
 
             {accountId && (
                 <AddTransactionModal

@@ -7,6 +7,7 @@ import Paper from '@mui/material/Paper';
 import AccountActions from '../AccountActions/AccountActions';
 import EditAccountDialog from '../EditAccountDialog/EditAccountDialog';
 import { useKeeper } from '../../context/KeeperContext';
+import { Typography } from '@mui/material';
 
 
 export default function AccountItem({ account }: { account: Account }) {
@@ -34,17 +35,17 @@ export default function AccountItem({ account }: { account: Account }) {
         navigate(`base/account/${accountId}`);
     }
 
-    if (!account?.accountId) {      
+    if (!account?.accountId) {
         return null; // or a placeholder
     }
 
 
 
     return (
-        <Paper elevation={3} className='account-item'>
+        <Paper elevation={3} className='account-item' sx={{ color: 'text.primary' }}>
             <div role='button' className='account-button' aria-disabled={!account?.accountId} onClick={() => handleTransactionDialog(account?.accountId)}>
                 <div className='account-button-title'>
-                    <h2>{account.accountNickname}</h2>
+                    <Typography variant="h6" sx={{ color: 'text.primary' }}>{account.accountNickname}</Typography>
                     <div onClick={(e) => e.stopPropagation()}>
                         <AccountActions onEdit={handleClickOpen} onDelete={handleDelete} />
                     </div>

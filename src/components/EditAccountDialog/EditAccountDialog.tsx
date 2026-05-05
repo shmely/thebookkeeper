@@ -98,7 +98,7 @@ const EditAccountDialog: React.FC<EditAccountDialog> = ({ open, onClose, account
             dir=''
             slotProps={{ paper: { sx: { borderRadius: 3, p: 1, } } }}
         >
-            <DialogTitle sx={{ m: 0, p: 2, textAlign: 'center', fontWeight: 'bold' }}>
+            <DialogTitle sx={{ m: 0, p: 2, textAlign: 'center', fontWeight: 'bold', color: 'text.primary' }}>
                 הוסף ארנק חדש
                 <IconButton
                     aria-label="close"
