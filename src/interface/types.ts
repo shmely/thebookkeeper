@@ -1,3 +1,5 @@
+import type { Dayjs } from "dayjs";
+
 export type TransactionType = 'income' | 'expense';
 
 export interface Transaction {
@@ -23,3 +25,7 @@ export interface Account {
     sharedUsers?: string[];
 }
 
+export interface DateRange {
+    from: Dayjs;
+    to: Dayjs;
+}

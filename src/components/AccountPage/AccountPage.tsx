@@ -9,49 +9,23 @@ import {
     AccountBalanceWallet, TrendingUp,
     TrendingDown
 } from '@mui/icons-material';
+import dayjs from 'dayjs';
 import { useKeeper } from '../../context/KeeperContext';
 import AddTransactionModal from './AddTransactionModal';
-import type { Transaction } from '../../interface/types';
+import type { DateRange, Transaction } from '../../interface/types';
+import CustomDateRangeDialog from '../custom/CustomDateRangeDialog';
 
 type RouteParams = {
     accountId: string;
 };
 
-interface DateRange {
-    from: Date;
-    to: Date;
-}
+
 
 const getCurrentMonthRange = (): DateRange => {
-    const now = new Date();
-    const year = now.getFullYear();
-    const month = now.getMonth();
-
-    const from = new Date(year, month, 1);
-    const to = new Date(year, month + 1, 0);
-    to.setHours(23, 59, 59, 999);
-
-    return { from, to };
-};
-
-const getLast3monthsRange = (): DateRange => {
-    const now = new Date();
-    const year = now.getFullYear();
-    const month = now.getMonth();
-    const from = new Date(year, month - 3, 1);
-    const to = new Date(year, month, 0);
-    to.setHours(23, 59, 59, 999);
-    return { from, to };
-};
-
-const getLast6monthsRange = (): DateRange => {
-    const now = new Date();
-    const year = now.getFullYear();
-    const month = now.getMonth();
-    const from = new Date(year, month - 6, 1);
-    const to = new Date(year, month, 0);
-    to.setHours(23, 59, 59, 999);
-    return { from, to };
+    return {
+        from: dayjs().startOf('month'),
+        to: dayjs().endOf('month')
+    };
 };
 
 const AccountPage: React.FC = () => {
@@ -64,6 +38,7 @@ const AccountPage: React.FC = () => {
     const [transaction, setTransaction] = useState<Transaction | undefined>(undefined);
     const [dateRange, setDateRange] = useState<DateRange>(getCurrentMonthRange());
     const [dateRangeText, setDateRangeText] = useState<string>('חודש אחרון');
+    const [customDialogOpen, setCustomDialogOpen] = useState(false);
     const { getTransactions, getAccounts } = useKeeper();
 
     // 2. Fetch data based on the ID
@@ -102,20 +77,57 @@ const AccountPage: React.FC = () => {
 
     const onChangeDateRange = (event: React.MouseEvent<HTMLElement>): void => {
         const text = (event.target as HTMLElement).innerText;
-        if (text === 'חודש אחרון') {
-            setDateRange(getCurrentMonthRange());
+        switch (text) {
+            case 'חודש אחרון':
+                setDateRange({
+                    from: dayjs().subtract(1, 'month'),
+                    to: dayjs()
+                });
+                break;
 
-        }
-        else if (text === '3 חודשים אחרונים') {
-            setDateRange(getLast3monthsRange());
-        }
-        else if (text === '6 חודשים אחרונים') {
-            setDateRange(getLast6monthsRange());
-        }
-        else {//temp do nothing, should be use from open daterange picker}
+            case '3 חודשים אחרונים':
+                setDateRange({
+                    from: dayjs().subtract(3, 'month'),
+                    to: dayjs()
+                });
+                break;
+            case '6 חודשים אחרונים':
+                setDateRange({
+                    from: dayjs().subtract(6, 'month'),
+                    to: dayjs()
+                });
+                break;
+            case '12 חודשים אחרונים':
+                setDateRange({
+                    from: dayjs().subtract(12, 'month'),
+                    to: dayjs()
+                });
+                break;
+            case 'מתחילת השנה':
+                setDateRange({
+                    from: dayjs().startOf('year'), // Automatically gets Jan 1st at 00:00:00!
+                    to: dayjs().endOf('year')      // Automatically gets Dec 31st at 23:59:59!
+                });
+                break;
+            case 'טווח מותאם אישית':
+                setCustomDialogOpen(true);
+                break;
         }
         setDateRangeText(text);
+        handleMenuClose();
     };
+
+
+
+    function handleOnCloseDateRangeDialog(): void {
+        setCustomDialogOpen(false);
+    }
+
+    function handleConfirmDateRange(dateRange: DateRange): void {
+        setDateRange(dateRange);
+        handleOnCloseDateRangeDialog();
+        setDateRangeText(dateRange.from.format('DD/MM/YYYY') + ' - ' + dateRange.to.format('DD/MM/YYYY'));
+    }
 
     return (
         <Box sx={{ direction: 'rtl', bgcolor: '#f9f9f9', minHeight: '100vh', pt: 2, pb: 10 }}>
@@ -135,7 +147,11 @@ const AccountPage: React.FC = () => {
                         </Typography>
                         <Typography variant="overline" color="text.secondary">יתרה נוכחית</Typography>
                         <Typography variant="h3" sx={{ fontWeight: 800, color: isBalancePositive ? '#2e7d32' : '#d32f2f', my: 1 }}>
-                            ₪{currentAccount.accountBalance?.toLocaleString('he-IL')}
+                            {currentAccount.accountBalance?.toLocaleString('he-IL', {
+                                style: 'currency',
+                                currency: 'ILS',
+                                maximumFractionDigits: 0 // Optional: change to 2 if you want to show agorot (cents)
+                            })}
                         </Typography>
                         <Chip
                             icon={isBalancePositive ? <TrendingUp style={{ color: '#2e7d32' }} /> : <TrendingDown style={{ color: '#d32f2f' }} />}
@@ -148,18 +164,18 @@ const AccountPage: React.FC = () => {
                 </Card>
 
                 {/* Actions Row */}
-                <Box sx={{ display: 'flex', gap: 1, mb: 2, alignItems: 'center' }}>
+                <Box sx={{ display: 'flex', mb: 2, justifyContent: 'space-between', flexWrap: 'wrap' }}>
                     <Button
                         variant="contained"
                         fullWidth
                         startIcon={<Add />}
                         onClick={() => setIsModalOpen(true)}
-                        sx={{ gap: 5, bgcolor: '#7c4dff', borderRadius: 2, height: 48, '&:hover': { bgcolor: '#651fff' } }}
+                        sx={{ gap: 3, bgcolor: '#7c4dff', borderRadius: 2, height: 48, width: '40%', '&:hover': { bgcolor: '#651fff' } }}
                     >
                         הוסף עסקה
                     </Button>
 
-                    <IconButton sx={{ bgcolor: '#eeeeee', borderRadius: 2, p: 1.5 }}>
+                    <IconButton sx={{ bgcolor: '#eeeeee', borderRadius: 2, p: 1.5, width: '10%' }}>
                         <Refresh />
                     </IconButton>
 
@@ -167,7 +183,7 @@ const AccountPage: React.FC = () => {
                         variant="outlined"
                         startIcon={<CalendarToday />}
                         onClick={handleMenuOpen}
-                        sx={{ borderRadius: 2, height: 48, borderColor: '#7c4dff', color: '#7c4dff', whiteSpace: 'nowrap', minWidth: '150px', gap: 1.5 }}
+                        sx={{ borderRadius: 2, height: 48, borderColor: '#7c4dff', color: '#7c4dff', whiteSpace: 'nowrap', width: '40%', gap: 1.5 }}
                     >
                         {dateRangeText}
                     </Button>
@@ -178,7 +194,7 @@ const AccountPage: React.FC = () => {
                     anchorEl={anchorEl}
                     open={Boolean(anchorEl)}
                     onClose={handleMenuClose}
-                    PaperProps={{ sx: { width: 200, borderRadius: 2, boxShadow: 3 } }}
+                    slotProps={{ paper: { sx: { width: 200, borderRadius: 2, boxShadow: 3 } } }}
                 >
                     {['חודש אחרון', '3 חודשים אחרונים', '6 חודשים אחרונים', '12 חודשים אחרונים', 'מתחילת השנה', 'טווח מותאם אישית'].map((text) => (
                         <MenuItem key={text} onClick={onChangeDateRange} sx={{ textAlign: 'right', py: 1.5 }}>
@@ -191,8 +207,8 @@ const AccountPage: React.FC = () => {
                 <List sx={{ bgcolor: 'white', borderRadius: 3, boxShadow: '0 2px 8px rgba(0,0,0,0.04)', overflow: 'hidden', direction: 'rtl' }}>
                     {transactions
                         .filter((transaction) => {
-                            const date = new Date(transaction.date);
-                            return date >= dateRange.from && date <= dateRange.to;
+                            const txDate = dayjs(transaction.date).valueOf();
+                            return txDate >= dateRange.from.valueOf() && txDate <= dateRange.to.valueOf();
                         })
                         // 4. ADDED SORTING: Newest transactions show up first
                         .sort((a, b) => new Date(b.date).getTime() - new Date(a.date).getTime())
@@ -236,7 +252,11 @@ const AccountPage: React.FC = () => {
                                     variant="body1"
                                     sx={{ fontWeight: 700, color: item.amount >= 0 ? '#2e7d32' : '#d32f2f', whiteSpace: 'nowrap', fontSize: 18 }}
                                 >
-                                    {Number(Math.abs(item.amount)).toLocaleString('he-IL', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
+                                    {Number(Math.abs(item.amount)).toLocaleString('he-IL', {
+                                        style: 'currency',
+                                        currency: 'ILS',
+                                        maximumFractionDigits: 0 // Optional: change to 2 if you want to show agorot (cents)
+                                    })}
                                 </Typography>
                             </ListItem>
                         ))}
@@ -257,6 +277,12 @@ const AccountPage: React.FC = () => {
                     onClose={handleOnCloseTransactionModal}
                 />
             )}
+            <CustomDateRangeDialog
+                open={customDialogOpen}
+                onClose={handleOnCloseDateRangeDialog}
+                onConfirm={handleConfirmDateRange}
+                dateRange={dateRange}
+            />
         </Box>
     );
 };
