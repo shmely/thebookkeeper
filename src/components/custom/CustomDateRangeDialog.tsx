@@ -1,7 +1,7 @@
 import { useState, useEffect } from 'react';
 import { Dialog, DialogTitle, DialogContent, DialogActions, Button, Typography } from '@mui/material';
 import dayjs, { Dayjs } from 'dayjs';
-import { DateCalendar, DatePicker, LocalizationProvider } from '@mui/x-date-pickers';
+import { DatePicker, LocalizationProvider } from '@mui/x-date-pickers';
 import type { DateRange } from '../../interface/types';
 import { AdapterDayjs } from '@mui/x-date-pickers/AdapterDayjs';
 import ChevronLeftIcon from '@mui/icons-material/ChevronLeft';
@@ -54,7 +54,7 @@ export default function CustomDateRangeDialog({
             <DialogTitle alignSelf={'center'} color='#1a237e'>בחר טווח תאריכים</DialogTitle>
             <DialogContent sx={{ display: 'flex', flexDirection: 'column', pt: 2, minWidth: '300px', alignItems: 'flex-start' }}>
                 <LocalizationProvider dateAdapter={AdapterDayjs}>
-                    <Typography variant="subtitle1" align="center" color='#1a237e' fontWeight="bold" marginRight={5}>
+                    <Typography variant="subtitle1" color='#1a237e' fontWeight="bold" width='90%' textAlign='right' marginRight='1rem'>
                         מתאריך
                     </Typography>
                     <DatePicker
@@ -72,7 +72,7 @@ export default function CustomDateRangeDialog({
                         }}
 
                     />
-                    <Typography variant="subtitle1" align="center" color='#1a237e' fontWeight="bold" marginRight={5}>
+                    <Typography variant="subtitle1" color='#1a237e' fontWeight="bold" width='90%' textAlign='right' marginRight='1rem'>
                         עד תאריך
                     </Typography>
                     <DatePicker
@@ -97,7 +97,7 @@ export default function CustomDateRangeDialog({
                 <Button onClick={onClose} color="inherit">
                     ביטול
                 </Button>
-                <Button onClick={handleConfirm} variant="contained" sx={{ ml: '0 !important' }}>
+                <Button onClick={handleConfirm} variant="contained" sx={{ ml: '10px !important', mt: '5px !important' }}>
                     אישור
                 </Button>
             </DialogActions>
