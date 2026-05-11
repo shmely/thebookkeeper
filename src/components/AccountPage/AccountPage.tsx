@@ -164,18 +164,32 @@ const AccountPage: React.FC = () => {
                 </Card>
 
                 {/* Actions Row */}
-                <Box sx={{ display: 'flex', mb: 2, justifyContent: 'space-between', flexWrap: 'wrap' }}>
+                <Box sx={{ display: 'flex', gap: 1, flexWrap: 'wrap' }}>
                     <Button
                         variant="contained"
                         fullWidth
                         startIcon={<Add />}
                         onClick={() => setIsModalOpen(true)}
-                        sx={{ gap: 3, bgcolor: '#7c4dff', borderRadius: 2, height: 48, width: '40%', '&:hover': { bgcolor: '#651fff' } }}
+                        sx={{
+                            flex: 1, // Takes up available shared space
+                            whiteSpace: 'nowrap', // Forces text to stay on one line
+                            gap: 1,
+                            bgcolor: '#7c4dff',
+                            borderRadius: 2,
+                            height: 48,
+                            '&:hover': { bgcolor: '#651fff' },
+                            px: { xs: 1.5, sm: 2 } // Slightly reduces padding on very small screens
+                        }}
                     >
                         הוסף עסקה
                     </Button>
 
-                    <IconButton sx={{ bgcolor: '#eeeeee', borderRadius: 2, p: 1.5, width: '10%' }}>
+                    <IconButton sx={{
+                        bgcolor: '#eeeeee',
+                        borderRadius: 2,
+                        p: 1.5,
+                        flexShrink: 0 // Ensures the icon button never gets squished
+                    }}>
                         <Refresh />
                     </IconButton>
 
@@ -183,9 +197,33 @@ const AccountPage: React.FC = () => {
                         variant="outlined"
                         startIcon={<CalendarToday />}
                         onClick={handleMenuOpen}
-                        sx={{ borderRadius: 2, height: 48, borderColor: '#7c4dff', color: '#7c4dff', whiteSpace: 'nowrap', width: '40%', gap: 1.5 }}
+                        sx={{
+                            flex: 1,
+                            minWidth: 0, // 1. Allows the button to shrink below its content width
+                            borderRadius: 2,
+                            height: 48,
+                            borderColor: '#7c4dff',
+                            color: '#7c4dff',
+                            px: { xs: 1.5, sm: 2 },
+                            // Ensure the icon doesn't shrink and has proper spacing
+                            '& .MuiButton-startIcon': {
+                                flexShrink: 0,
+                                marginInlineEnd: 1,
+                                marginInlineStart: 0
+                            }
+                        }}
                     >
-                        {dateRangeText}
+                        <Box
+                            component="span"
+                            sx={{
+                                whiteSpace: 'nowrap',
+                                overflow: 'hidden',
+                                textOverflow: 'ellipsis',
+                                display: 'block'
+                            }}
+                        >
+                            {dateRangeText}
+                        </Box>
                     </Button>
                 </Box>
 
