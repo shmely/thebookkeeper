@@ -1,12 +1,13 @@
 import React, { useState } from 'react';
 import { useNavigate, useParams } from 'react-router-dom';
 import {
-    Box, Container, Typography, Card, CardContent, Button, IconButton,
+    Box, Container, Typography, Card, CardContent, Button,
     List, ListItem, ListItemIcon, Chip, Menu, MenuItem, CircularProgress
 } from '@mui/material';
+
 import {
-    ArrowForward, Add, Refresh, CalendarToday,
-    AccountBalanceWallet, TrendingUp,
+    ArrowForward, Add, CalendarToday,
+    AccountBalanceWallet, TrendingUp, Description,
     TrendingDown
 } from '@mui/icons-material';
 import dayjs from 'dayjs';
@@ -14,6 +15,7 @@ import { useKeeper } from '../../context/KeeperContext';
 import AddTransactionModal from './AddTransactionModal';
 import type { DateRange, Transaction } from '../../interface/types';
 import CustomDateRangeDialog from '../custom/CustomDateRangeDialog';
+import { CustomerReportDialog } from './CustomerReportDialog';
 
 type RouteParams = {
     accountId: string;
@@ -40,7 +42,11 @@ const AccountPage: React.FC = () => {
     const [dateRangeText, setDateRangeText] = useState<string>('חודש אחרון');
     const [customDialogOpen, setCustomDialogOpen] = useState(false);
     const { getTransactions, getAccounts } = useKeeper();
+    const [customerReportDialogOpen, setCustomerReportDialogOpen] = useState(false);
 
+    const handleOnCloseCustomerReportDialog = (): void => {
+        setCustomerReportDialogOpen(false);
+    }
     // 2. Fetch data based on the ID
     const transactions: Transaction[] = getTransactions(accountId);
     const currentAccount = getAccounts().find(account => account.accountId === accountId);
@@ -164,7 +170,7 @@ const AccountPage: React.FC = () => {
                 </Card>
 
                 {/* Actions Row */}
-                <Box sx={{ display: 'flex', gap: 1, flexWrap: 'wrap' }}>
+                <Box sx={{ display: 'flex', gap: 1, flexWrap: 'wrap', marginBottom: 2 }}>
                     <Button
                         variant="contained"
                         fullWidth
@@ -184,15 +190,24 @@ const AccountPage: React.FC = () => {
                         הוסף עסקה
                     </Button>
 
-                    <IconButton sx={{
-                        bgcolor: '#eeeeee',
-                        borderRadius: 2,
-                        p: 1.5,
-                        flexShrink: 0 // Ensures the icon button never gets squished
-                    }}>
-                        <Refresh />
-                    </IconButton>
-
+                    <Button
+                        variant="contained"
+                        fullWidth
+                        startIcon={<Description />}
+                        onClick={() => setCustomerReportDialogOpen(true)}
+                        sx={{
+                            flex: 1, // Takes up available shared space
+                            whiteSpace: 'nowrap', // Forces text to stay on one line
+                            gap: 1,
+                            bgcolor: '#7c4dff',
+                            borderRadius: 2,
+                            height: 48,
+                            '&:hover': { bgcolor: '#651fff' },
+                            px: { xs: 1.5, sm: 2 } // Slightly reduces padding on very small screens
+                        }}
+                    >
+                        הפק חשבון ללקוח
+                    </Button>
                     <Button
                         variant="outlined"
                         startIcon={<CalendarToday />}
@@ -320,6 +335,13 @@ const AccountPage: React.FC = () => {
                 onClose={handleOnCloseDateRangeDialog}
                 onConfirm={handleConfirmDateRange}
                 dateRange={dateRange}
+            />
+            <CustomerReportDialog
+                open={customerReportDialogOpen}
+                onClose={handleOnCloseCustomerReportDialog}
+                accountName={currentAccount.accountNickname}
+                initialDateRange={{ from: dateRange.from.valueOf(), to: dateRange.to.valueOf() }}
+                transactions={transactions}
             />
         </Box>
     );
