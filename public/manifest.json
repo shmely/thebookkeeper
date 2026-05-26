@@ -1,20 +1,21 @@
 {
-  "short_name": "BookKeeper",
-  "name": "BookKeeper App",
+  "short_name": "thebookkeeper",
+  "name": "מנהל החשבונות שלי",
   "icons": [
     {
-      "src": "favicon.svg",
-      "type": "image/svg+xml",
+      "src": "/android-chrome-192x192.png",
+      "type": "image/png",
       "sizes": "192x192"
     },
     {
-      "src": "favicon.svg",
-      "type": "image/svg+xml",
+      "src": "/android-chrome-512x512.png",
+      "type": "image/png",
       "sizes": "512x512"
     }
   ],
-  "start_url": ".",
-  "display": "standalone", 
-  "theme_color": "#42a5f5",
-  "background_color": "#ffffff"
+  "start_url": "/",
+  "background_color": "#fafafa",
+  "display": "standalone",
+  "theme_color": "#3949ab",
+  "orientation": "portrait"
 }

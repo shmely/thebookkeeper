@@ -47,33 +47,39 @@ export default function Header() {
         };
     }, []);
 
-    const handleInstallClick = async () => {
-        // Close the side menu first
-        setDrawerOpen(false);
+    const handleInstallClick = () => {
+        // שלב 1: הבאת האירוע מיד! (ללא תנאים וללא עיכובים)
+        const promptEvent = window.deferredPrompt || deferredPrompt;
 
-        // Check if device is iOS (iPhone/iPad)
-        const isIOS = /iPad|iPhone|iPod/.test(navigator.userAgent) && !(window as any).MSStream;
+        if (!promptEvent) {
+            // אם אין אירוע, נבדוק בבטחה למה ונציג פתרון
+            const isIOS = /iPad|iPhone|iPod/.test(navigator.userAgent) && !(window as any).MSStream;
+            const isStandalone = window.matchMedia('(display-mode: standalone)').matches || (navigator as any).standalone;
 
-        // Check if the app is already installed/running in standalone mode
-        const isStandalone = window.matchMedia('(display-mode: standalone)').matches || (navigator as any).standalone;
+            setDrawerOpen(false);
 
-        if (isStandalone) {
-            alert("האפליקציה כבר מותקנת! (App is already installed)");
+            if (isStandalone) {
+                alert("האפליקציה כבר מותקנת!");
+            } else if (isIOS) {
+                setShowIosInstruction(true);
+            } else {
+                alert("כדי להתקין, פתח את התפריט בדפדפן ולחץ על 'התקן אפליקציה' או 'הוסף למסך הבית'.");
+            }
             return;
         }
-        if (deferredPrompt) {
-            // 1. ANDROID / CHROME: Show the native install prompt
-            deferredPrompt.prompt();
-            const { outcome } = await deferredPrompt.userChoice;
-            if (outcome === 'accepted') {
-                setDeferredPrompt(null);
-            }
-        } else if (isIOS) {
-            // 2. iOS / SAFARI: Show custom instructions (Apple doesn't support automatic prompts)
-            setShowIosInstruction(true);
-        } else {
-            // Fallback for desktop or unsupported browsers
-            alert("כדי להתקין, פתח את התפריט בדפדפן ולחץ על 'התקן אפליקציה' או 'הוסף למסך הבית'.");
+
+        // שלב 2: הפעלה מיידית של הפרומפט (בדיוק מה שכרום דורש בקליק)
+        try {
+            promptEvent.prompt();
+
+            // שלב 3: ניקוי וסגירת התפריט יקרו רק *אחרי* שהפרומפט נפתח
+            setDrawerOpen(false);
+
+            if (window.deferredPrompt) window.deferredPrompt = null;
+            if (deferredPrompt) setDeferredPrompt(null);
+        } catch (err) {
+            console.error("שגיאה בהפעלת הפרומפט:", err);
+            setDrawerOpen(false);
         }
     };
 

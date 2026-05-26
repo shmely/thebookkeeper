@@ -177,7 +177,7 @@ const AccountPage: React.FC = () => {
                         startIcon={<Add />}
                         onClick={() => setIsModalOpen(true)}
                         sx={{
-                            flex: 1, // Takes up available shared space
+                            width: '90px', // Takes up available shared space
                             whiteSpace: 'nowrap', // Forces text to stay on one line
                             gap: 1,
                             bgcolor: '#7c4dff',
@@ -187,7 +187,10 @@ const AccountPage: React.FC = () => {
                             px: { xs: 1.5, sm: 2 } // Slightly reduces padding on very small screens
                         }}
                     >
-                        הוסף עסקה
+                        <Box sx={{ display: 'flex', flexDirection: 'column', lineHeight: 1.2, alignItems: 'center' }}>
+                            <span>הוסף </span>
+                            <span>עסקה</span>
+                        </Box>
                     </Button>
 
                     <Button
@@ -196,7 +199,7 @@ const AccountPage: React.FC = () => {
                         startIcon={<Description />}
                         onClick={() => setCustomerReportDialogOpen(true)}
                         sx={{
-                            flex: 1, // Takes up available shared space
+                            width: '90px', // Takes up available shared space
                             whiteSpace: 'nowrap', // Forces text to stay on one line
                             gap: 1,
                             bgcolor: '#7c4dff',
@@ -206,14 +209,17 @@ const AccountPage: React.FC = () => {
                             px: { xs: 1.5, sm: 2 } // Slightly reduces padding on very small screens
                         }}
                     >
-                        הפק חשבון ללקוח
+                        <Box sx={{ display: 'flex', flexDirection: 'column', lineHeight: 1.2, alignItems: 'center' }}>
+                            <span>דו"ח</span>
+                            <span>לקוח</span>
+                        </Box>
                     </Button>
                     <Button
                         variant="outlined"
                         startIcon={<CalendarToday />}
                         onClick={handleMenuOpen}
                         sx={{
-                            flex: 1,
+                            flex: 1, // Takes up available shared space
                             minWidth: 0, // 1. Allows the button to shrink below its content width
                             borderRadius: 2,
                             height: 48,
